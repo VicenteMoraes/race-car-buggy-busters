@@ -5,4 +5,4 @@ echo "source /usr/share/colcon_argcomplete/hook/colcon_argcomplete.bash" >> ~/.b
 source ~/.bashrc
 
 python3 -m pip install --upgrade pip
-pip install --dependency-groups=docs -e avai_lab
+pip install -e avai_lab[docs]
