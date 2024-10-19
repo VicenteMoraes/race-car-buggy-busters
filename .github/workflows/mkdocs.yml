@@ -1,0 +1,41 @@
+on:
+    push:
+        branches:
+            - '**'
+        paths:
+            - 'docs/**'
+            - 'mkdocs.yml'
+            - 'race_car_ws/src/test_package/**'
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        container:
+            image: ros:humble
+
+        steps:
+            - name: Check Out Repository
+              uses: actions/checkout@v4
+    
+            - name: Install Dependencies
+              run: |
+                apt-get install -y python3-pip
+                pip3 install --upgrade pip setuptools wheel
+                pip3 install -e ./avai_lab[docs]
+        
+            - name: Build ROS 2 Packages
+              shell: bash
+              run: |
+                cd race_car_ws
+                colcon build
+
+            - name: Build MkDocs Site
+              run: |
+                source race_car_ws/install/setup.bash
+                mkdocs build --verbose --clean
+
+            - name: Upload Site as Artifact
+              uses: actions/upload-artifact@v4
+              with:
+                name: mkdocs-site-${{ github.ref_name }}
+                path: site/
