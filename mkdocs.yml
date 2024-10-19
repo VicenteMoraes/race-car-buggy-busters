@@ -1,0 +1,64 @@
+site_name: AVAI Lab
+nav:
+  - Home: index.md
+  - Avai lab package: avai-lab-package.md
+  - ROS2 test package: test_package.md
+  - Requirements: requirements.md
+theme:
+  name: material
+  features:
+    - navigation.path
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.annotation
+    - content.code.copy
+  palette:
+      - scheme: default
+        toggle:
+          icon: material/toggle-switch-off-outline 
+          name: Switch to dark mode
+        primary: blue
+        accent: purple 
+      - scheme: slate 
+        toggle:
+          icon: material/toggle-switch
+          name: Switch to light mode    
+        primary: blue
+        accent: white
+markdown_extensions:
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - admonition
+  - pymdownx.arithmatex:
+      generic: true
+  - footnotes
+  - pymdownx.details
+  - pymdownx.mark
+  - attr_list
+plugins:
+  - search
+  - autorefs
+  - mkdocstrings:
+      enabled: true
+      default_handler: python
+      handlers:
+        python:
+          options:
+            show_source: true
+          setup_commands:
+            - import sys
+            - from pathlib import Path
+            - sys.path.append(Path("./race_car_ws/src/test_package/").resolve())
+          selection:
+            new_path_syntax: true
