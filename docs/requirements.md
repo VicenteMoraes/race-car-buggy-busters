@@ -15,7 +15,7 @@ This section will hold the functional requirements for the project.
 5 | F5 | Self-Localization | When the race begins the vehicle must localize its position relative to track boundaries using fused data from LiDAR, camera, and odometry. | Localization
 6 | F6 | Map Updates | When obstacles are detected the vehicle must update its internal map of the track dynamically in real-time. | Mapping, Planning
 7 | F7 | Optimal trajectory | When planning the path the vehicle must generate an optimal trajectory within track boundaries using the detected cone positions and real-time sensor data. | Planning
-8 | F8 | Obstacle Avoidance | When an obstacle is detected the vehicle must replan its path to avoid the obstacle (while maintaining speed). | Planning
+8 | F8 | Obstacle Avoidance | When an obstacle is detected the vehicle should replan its path to avoid the obstacle (while maintaining speed), but the system may choose not to avoid obstacles that do not interfere with the vehicle's path. | Planning
 9 | F9 | Speed Maintenance | When on track the vehicle must maintain a speed of max. 30-40 km/h depending on the track layout and detected obstacles. | Planning
 10 | F10 | Sharp Turns | While approaching sharp turns the vehicle must adjust its speed to ensire safe cornering without exceeding the track boundaries. | Planning, Control
 11 | F11 | Smooth Acceleration | When accelreating the vehicle mist limit its accelaration to avoid jerky movements using a sof acceleration curve, ensuring smooth control. | Control
@@ -53,4 +53,11 @@ This section will hold the constraints for the project.
 
 \# | ID | Name | Text | Autonomous Driving Task(s)
 ---|----|------|------|---------------------------
-
+1 | C1 | Speed Limit | The vehicle must not exceed a speed of 40 km/h due to track limitations and safety considerations. | Control
+2 | C2 | Jetson Limitiations | The system must operate within the limitations of the NVIDIA Jetson NX ensuring all processes can run in real-time without overloading the CPU/GPU. | Perception, Planning, Control, Monitoring
+3 | C3 | Real-Time Performance | The system must process sensor inputs at 20-30Hz to maintain real-time performance within the computational limits of the vehicle. | Perception
+4 | C4 | Remote Emergency Stop | The vehicle must include a Remote Emergency Stop system that can be triggered by the race team/ race officials at any time during the race. | Control
+5 | C5 | System Monitoring | The autonomous system must continuously monitor critical safety components and transition to a safe state if a failure is detected. | Monitoring
+6 | C6 | Power Budget | The sensor suite must operate within a power budget defined by the F1TENTH platform, ensuring no component exceeds the power capacity available to the vehicle. | Monitoring
+7 | C7 | Ackerman Steering | The vehicle must use the Ackerman steering system for turning, which constains the types of maneuvers the vehicle can perform. | Control, Planning
+8 | C8 | Testing | Vehicle testing on track must be done within the practice tracks provided. | Testing
