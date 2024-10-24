@@ -2,6 +2,25 @@
 
 This section will hold the requirements for the project.
 
+## Goal
+
+The goal is to program an autonomous vehicle to drive at least one lap on an indoor track in a fast, yet safe manner.
+
+## Assumptions
+
+* The vehicle is placed in driving direction.
+* F1TENTH Cone System: Left cones are blue, right cones are yellow, the start zone has orange cones on both sides.
+* There will be no other vehicles on the track.
+* The maximum speed is around 15 km/h.
+* The race car is ROS based.
+* Hardware used:
+	* 3D + Mono Camera (Intel RealSense Depth Camera D435i)
+	* High-Resolution 2D LiDAR (Hokuyi UST-10 LiDAR)
+	* NVIDIA Jetson NX 16GB
+	* 4 Wheel Drive with Ackerman Steering
+* The vehicle will be driving on an indoors track.
+* The track is a loop and doesn't have any branching.
+
 ## Functional
 
 This section will hold the functional requirements for the project.
