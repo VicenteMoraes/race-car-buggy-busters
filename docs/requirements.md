@@ -28,22 +28,21 @@ This section will hold the functional requirements for the project.
 \# | ID | Name | Text | Autonomous Driving Task(s)
 ---|----|------|------|---------------------------
 1 | F1 | General Perception | The vehicle must capture real-time 3D depth data and high-resolution mono visual data to perceive the environment. | Perception
-2 | F2 | Object Detection & Classification | The system must detect and classify objects such as track boundaries and obstacles. | Perception
+2 | F2 | Object Detection & Classification | The system must detect and classify objects such as track boundaries. | Perception
 1 | F1 | Cone Detection | When on track the vehicle must detect cones marking the track boundaries in real-time using the camera and LiDAR sensors. | Perception
-3 | F2 | Sensor Fusion | When collecting data the perception system must integrate LiDAR and camera data using a sensor fusion algorithm to improve obstacle detection accuracy. | Perception
-4 | F4 | Distance Estimation | While driving the vehicle must estimate the disctance to the obstacles and track boundaries continuously (with less than 5% error margin). | Perception
+3 | F2 | Sensor Fusion | When collecting data the perception system must integrate LiDAR and camera data using a sensor fusion algorithm to improve cone detection accuracy. | Perception
+4 | F4 | Distance Estimation | While driving the vehicle must estimate the disctance to the track boundaries continuously (with less than 5% error margin). | Perception
 4 | F4 | Point Cloud | The vehicle must collect 3D LiDAR point cloud data to detect and map its surroundlings in real-time. | Perception
 5 | F5 | Visual Data | The camera system must provide input for visual odometry and SLAM, ensuring accurate self-localization. | Perception, Localization
 5 | F5 | Self-Localization | The vehicle must localize its position relative to track boundaries using fused data from LiDAR, camera, and odometry. | Localization, Perception
-5 | F5 | Real-Time Map | The vehicle must generate a real-time map of the environment using LiDAR and visual sensors, aiding in obstacle detection and path planning. | Perception, Planning, Localization
-6 | F6 | Map Updates | When obstacles are detected the vehicle must update its internal map of the track dynamically in real-time. | Mapping, Planning
-6 | F6 | Environments | The system must be able to handle both static and dynamic environments, where obstacles or the track layout may change.
+5 | F5 | Real-Time Map | The vehicle must generate a real-time map of the environment using LiDAR and visual sensors, aiding in cone detection and path planning. | Perception, Planning, Localization
+6 | F6 | Environments | The system must be able to handle both static and dynamic environments, where the track layout may change.
 7 | F7 | Optimal trajectory | When planning the path the vehicle must generate an optimal trajectory within track boundaries using the detected cone positions and real-time sensor data, maintaining the desired speed. | Planning
 7 | F7 | Path Planning | The vehicle must implement a planning algorithm that works in real time, adjusting paths as the environment changes. | Planning
 7 | F7 | Path Updates | The path planner must compute new trajectories dynamically to handle sudden track changes. | Planning
 9 | F9 | Acceleration & Deceleration | The vehicle must decide when to accelerate, decelerate, or stop, depending on the environment. | Perception, Planning, Control
 9 | F9 | Driving Modes | The vehicle must be able between different driving modes (e.g. cruising, emergency stop) based on the context. | Planning, Control, Monitoring
-9 | F9 | Speed Maintenance | When on track the vehicle must maintain a speed of max. 15 km/h depending on the track layout and detected obstacles. | Planning
+9 | F9 | Speed Maintenance | When on track the vehicle must maintain a speed of max. 15 km/h depending on the track layout. | Planning
 9 | F9 | Acceleration Adaptation | The system must adapt acceleration to keep the vehicle within speed limits, adjusting for factors like road slope, friction, and other dynamic conditions. | Control
 10 | F10 | Sharp Turns | While approaching sharp turns the vehicle must adjust its speed to ensire safe cornering without exceeding the track boundaries. | Planning, Control
 11 | F11 | Smooth Acceleration | When accelreating the vehicle mist limit its accelaration to avoid jerky movements using a sof acceleration curve, ensuring smooth control. | Control
