@@ -20,8 +20,9 @@ jobs:
     
             - name: Install Dependencies
               run: |
+                apt-get update
                 apt-get install -y python3-pip
-                pip3 install --upgrade pip setuptools wheel
+                pip3 install --upgrade pip setuptools wheel packaging
                 pip3 install -e ./avai_lab[docs]
         
             - name: Build ROS 2 Packages
