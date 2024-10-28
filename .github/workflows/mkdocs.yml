@@ -6,6 +6,7 @@ on:
             - 'docs/**'
             - 'mkdocs.yml'
             - 'race_car_ws/src/test_package/**'
+            - '.github/workflows/mkdocs.yml'
     pull_request:
         branches:
             - main
