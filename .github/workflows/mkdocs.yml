@@ -31,6 +31,7 @@ jobs:
                 colcon build
 
             - name: Build MkDocs Site
+              shell: bash
               run: |
                 source race_car_ws/install/setup.bash
                 mkdocs build --verbose --clean
