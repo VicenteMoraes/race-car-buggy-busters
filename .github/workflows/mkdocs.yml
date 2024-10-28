@@ -1,7 +1,7 @@
 on:
     push:
         branches:
-            - '**'
+            - main
         paths:
             - 'docs/**'
             - 'mkdocs.yml'
@@ -44,7 +44,7 @@ jobs:
               id: deployment
               uses: actions/upload-pages-artifact@v3
               with:
-                name: mkdocs-site-${{ github.ref_name }}
+                name: mkdocs-site-pr-${{ github.event.pull_request.number || 'main' }}
                 path: site/
     deploy:
         if: github.ref == 'refs/heads/main'  
@@ -65,4 +65,4 @@ jobs:
               uses: actions/deploy-pages@v4
               with:
                 github_token: ${{ secrets.GITHUB_TOKEN }}
-                artifact_name: mkdocs-site-${{ github.ref_name }}
+                artifact_name: mkdocs-site-pr-main
