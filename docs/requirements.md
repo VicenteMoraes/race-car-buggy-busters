@@ -20,6 +20,8 @@ The goal is to program an autonomous vehicle to drive at least one lap on an ind
 	* 4 Wheel Drive with Ackerman Steering
 * The vehicle will be driving on an indoors track.
 * The track is a loop and doesn't have any branching.
+* Perception round and then timed round.
+* Track layout changes between races.
 
 ## Functional
 
@@ -28,10 +30,10 @@ This section will hold the functional requirements for the project.
 \# | ID | Name | Text | Autonomous Driving Task(s)
 ---|----|------|------|---------------------------
 1 | F1 | General Perception | The vehicle shall capture real-time 3D depth data using the Hokuyo UST-10 LiDAR and high-resolution visual data using the Intel RealSense Depth Camera D435i to perceive the environment. | Perception
-2 | F2 | Object Detection & Classification | The system shall detect and classify blue cones marking the left track boundary and yellow cones marking the right track boundary in real-time within a range of at least 50 cm. | Perception
+2 | F2 | Object Detection & Classification | The system shall detect and classify blue cones marking the left track boundary and yellow cones marking the right track boundary in real-time. | Perception
 1 | F1 | Cone Detection | When on track the vehicle shall detect cones marking the track boundaries in real-time using the camera and LiDAR sensors. | Perception
 3 | F2 | Sensor Fusion | When collecting data the perception system shall integrate LiDAR and camera data using a sensor fusion algorithm to improve cone detection accuracy. | Perception
-4 | F4 | Distance Estimation | While driving the vehicle shall estimate the disctance to the track boundaries continuously (with less than 5% error margin). | Perception
+4 | F4 | Distance Estimation | While driving the vehicle shall estimate the disctance to the track boundaries continuously. | Perception
 4 | F4 | Point Cloud | The vehicle shall collect 3D LiDAR point cloud data to detect and map its surroundlings in real-time. | Perception
 5 | F5 | Visual Data | The camera system shall provide input for visual odometry and SLAM, ensuring accurate self-localization. | Perception, Localization
 5 | F5 | Self-Localization | The vehicle shall localize its position relative to track boundaries using fused data from LiDAR, camera, and odometry. | Localization, Perception
@@ -47,12 +49,12 @@ This section will hold the functional requirements for the project.
 10 | F10 | Sharp Turns | While approaching sharp turns the vehicle shall adjust its speed to ensire safe cornering without exceeding the track boundaries. | Planning, Control
 11 | F11 | Smooth Acceleration | When accelreating the vehicle mist limit its accelaration to avoid jerky movements using a sof acceleration curve, ensuring smooth control. | Control
 12 | F12 | Braking | The vehicle shall be able to brake in real-time to slow down or stop based on planned behavior or unexpected events. | Control
-12 | F12 | Controlled Emergency Braking | When braking the vehicle shall decelerate within a controlled distance to avoid overshooting turns or track boundaries (, with braking distance adjusted to 2-3 meters at maximum speed). | Control
+12 | F12 | Controlled Emergency Braking | When braking the vehicle shall decelerate within a controlled distance to avoid overshooting turns or track boundaries. | Control
 13 | F13 | Steering Angle | When controlling the steering the vehicle shall calculate the optimal steering angle based on the track curvature and current speed. | Control
 13 | F13 | Steering | The vehicle shall control the Ackerman steering system to follow the planned trajectory accurately. | Control
 13 | F13 | Smooth Steering | The control system shall ensure stable and smooth steering, especially at high speeds. | Control
 15 | F15 | External Signals | The system shall respond appropriately to external signals and traffic rules defined for the track. | Control, Perception, Planning
-15 | F15 | Failsafe Mode | When a critical system failure is detected the vehicle shall engage the emergency braking system (within 100 ms) to bring the vehicle to a stop (within 2-3 meters). | Monitoring, Control
+15 | F15 | Failsafe Mode | When a critical system failure is detected the vehicle shall engage the emergency braking system to bring the vehicle to a stop. | Monitoring, Control
 16 | F16 | System Health | When system health is checked the vehicle shall monitor the status of all sensors, compute hardware, and acutators in real-time to ensure continuous operation. | Control
 16 | F16 | Odometry | The vehicle shall collect odometry data to track its speed, orientation and position over time. | Control, Monitoring
 16 | F16 | Health Checks | The system shall implement watchdog timers and health-check nodes ro detect failures or malfunctions in any part of the system. | Monitoring
@@ -74,7 +76,8 @@ This section will hold the quiality requirements for the project.
 4 | Q4 | Perception Radius | The perception system shall detect cones aat least 10 meters ahead to provide sufficient time for path adjustments. | Perception
 5 | Q5 | Emergency Braking Distance | The vehicle shall decelerate within 2-3 meters when the emergency braking system is engaged to ensure safe stopping. | Monitoring, Control, Safety
 6 | Q6 | Emergency Stop | The vehicle shall engage the emergency braking system within 100 ms of detecting critical system failures to avoid accidents. | Control, Monitoring
-8 | Q8 | Detection Rate | The perception system shall maintain a continuous detection rate of at least 95% for cones to prevent boundary violations or collisions. | Perception
+8 | Q8 | Detection Rate | The perception system shall maintain a continuous detection rate of at least 95% for cones to prevent boundary violations. | Perception
+2 | Q2 | Detection & Classification Range | The system shall detect and classify blue cones marking the left track boundary and yellow cones marking the right track boundary in real-time within a range of at least 2 m. | Perception
 9 | Q9 | Control System | The control system shall operate continuously for the duration of the race without any system crashes or interruptions. | Monitoring, Control
 10 | Q10 | Fallback | The vehicle shall recover from sensor or communication failures within 200 ms using fallback systems to ensure continuous operation. | Monitoring
 11 | Q11 | Logs | The system shall log sensor and control data with timestamps for a post-race analysis without exceeding storage limits. | Monitoring
