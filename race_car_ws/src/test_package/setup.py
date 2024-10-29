@@ -15,7 +15,8 @@ setup(
     zip_safe=True,
     entry_points={
         'console_scripts': [
-            'test_node = test_package.nodes.test_node:main'
+            'test_node = test_package.nodes.test_node:main',
+            'wasd_control_node = test_package.nodes.wasd_control_node:main'
         ],
     },
 )
