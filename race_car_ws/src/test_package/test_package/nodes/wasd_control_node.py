@@ -6,6 +6,8 @@ import rclpy
 from rclpy.node import Node
 from ackermann_msgs.msg import AckermannDriveStamped
 
+from avai_lab.config import load_config
+
 ## Driving command for a car-like vehicle using Ackermann steering.
 #  $Id$
 
@@ -69,11 +71,12 @@ class WASDControl(Node):
         self.get_logger().info("WASD control node started")
         self.get_logger().info("Press any other key to interrupt")
         self.drive_state = DriveState(False, False, False, False)
-        self.max_steering_angle = 1.0 # radians
-        self.max_speed = 0.25 # m/s
-        self.max_acceleration = 0.05 # m/s
-        self.max_acc = 0.05 # m/s
-        self.max_steering = 0.05 # radians/s
+        self.config = load_config()
+        self.get_logger().info(f"Used config:\n{str(self.config)}")
+        self.max_steering_angle = self.config.car_platform.max_steering_angle # radians
+        self.max_speed = self.config.car_platform.max_speed # m/s
+        self.max_acceleration = self.config.car_platform.max_acceleration # m/s
+        self.max_steering = self.config.car_platform.max_steering_angle # radians/s
         self.msg_id = 0
         self.current_msg = self._create_drive_msg()
         self.listener = Listener(
