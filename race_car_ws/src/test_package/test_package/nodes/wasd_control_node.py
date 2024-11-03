@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import sys, termios, tty, select
+from dataclasses import dataclass
 
-
+from pynput.keyboard import Key, Listener, KeyCode
 import rclpy
 from rclpy.node import Node
 from ackermann_msgs.msg import AckermannDriveStamped
@@ -54,6 +55,13 @@ def getKey():
 	termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
 	return key
 
+@dataclass
+class DriveState:
+    forward: bool
+    right: bool
+    left: bool
+    backwards: bool
+
 class WASDControl(Node):
     def __init__(self):
         super().__init__("WASDControl") # "NodeName" will be displayed in rqt_graph
@@ -61,45 +69,97 @@ class WASDControl(Node):
         self.publisher = self.create_publisher(AckermannDriveStamped, "/drive", 10)
         self.get_logger().info("WASD control node started")
         self.get_logger().info("Press any other key to interrupt")
+        self.drive_state = DriveState(False, False, False, False)
         self.max_steering_angle = 1.0 # radians
         self.max_speed = 0.25 # m/s
         self.max_acceleration = 0.05 # m/s
         self.max_acc = 0.05 # m/s
         self.max_steering = 0.05 # radians/s
         self.msg_id = 0
+        self.current_msg = self._create_drive_msg()
+        self.listener = Listener(
+                on_press=self._on_press,
+                on_release=self._on_release)
+        self.listener.start()
+        self._stop_node = False # Can be used from a thread to stop the spinning of the node
+        sys.stdin = None
 
-    def publish_control(self):
-        # Keyboard logic
+    def _create_drive_msg(self) -> AckermannDriveStamped:
+        """Create a new AckermannDriveStamped message using the parameters of self.drive_state"""
         t = self.get_clock().now()
         msg = AckermannDriveStamped()
         msg.header.stamp = t.to_msg()
         #msg.header.seq = self.msg_id
         msg.header.frame_id = "0"
-        msg.drive.steering_angle = 0.0
+        msg.drive.steering_angle = self.get_steering_angle() 
         msg.drive.steering_angle_velocity = self.max_steering
-        msg.drive.speed = 0.0
+        msg.drive.speed = self.get_drive_speed()
         msg.drive.jerk = self.max_acceleration
         msg.drive.acceleration = self.max_acceleration
         #msg.jerk = self.max_steering
-        self.publisher.publish(msg)
-        key = getKey()
-        match key:
-            case "w":
-                self.get_logger().info("FORWARD")
-                msg.drive.speed = self.max_speed
-            case "d":
-                self.get_logger().info("RIGHT")
-                msg.drive.steering_angle = self.max_steering_angle
-            case "a":
-                self.get_logger().info("LEFT")
-                msg.drive.steering_angle = -self.max_steering_angle
-            case "s":
-                self.get_logger().info("BACKWARDS")
-                msg.drive.speed = -self.max_speed
-            case _:
-                raise KeyboardInterrupt("Program terminated by user")
+        return msg
 
-        self.publisher.publish(msg)
+    def get_steering_angle(self) -> float:
+        """Return the correct steering angle based on the configured max values and the drive state"""
+        match self.drive_state:
+            case DriveState(_, False, False, _):
+                return 0.0
+            case DriveState(_, True, False, _):
+                return -self.max_steering_angle
+            case DriveState(_, False, True, _):
+                return self.max_steering_angle
+        return 0.0
+
+    def get_drive_speed(self) -> float:
+        """Return the correct speed based on the configured max values and the drive state"""
+        match self.drive_state:
+            case DriveState(False, _, _, False):
+                return 0.0
+            case DriveState(True, _, _, False):
+                return self.max_speed
+            case DriveState(False, _, _, True):
+                return -self.max_speed
+        return 0.0
+
+    def _on_press(self, key: Key | KeyCode | None):
+        """callback function for the keyboard listener"""
+        match key:
+            case KeyCode(char="w"):
+                self.drive_state.forward = True
+            case KeyCode(char="d"):
+                self.drive_state.right = True
+            case KeyCode(char="a"):
+                self.drive_state.left = True
+            case KeyCode(char="s"):
+                self.drive_state.backwards = True
+            case _:
+                self.listener.stop()
+                self._stop_node = True
+        return True
+
+    def _on_release(self, key: Key | KeyCode | None):
+        """callback function for the keyboard listener"""
+        match key:
+            case KeyCode(char="w"):
+                self.drive_state.forward = False
+            case KeyCode(char="d"):
+                self.drive_state.right = False
+            case KeyCode(char="a"):
+                self.drive_state.left = False
+            case KeyCode(char="s"):
+                self.drive_state.backwards = False
+            case _:
+                self.listener.stop()
+                self._stop_node = True
+        return True
+
+    def publish_control(self):
+        """Callback function for the timer to publish new drive messages"""
+        self.current_msg = self._create_drive_msg()
+        if self._stop_node:
+            raise KeyboardInterrupt("Program terminated by user")
+
+        self.publisher.publish(self.current_msg)
         self.msg_id += 1
 
 
