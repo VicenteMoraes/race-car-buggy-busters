@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import sys, termios, tty, select
 from dataclasses import dataclass
 
 from pynput.keyboard import Key, Listener, KeyCode
@@ -46,23 +45,23 @@ from ackermann_msgs.msg import AckermannDriveStamped
 # float32 acceleration            # desired acceleration (m/s^2)
 # float32 jerk                    # desired jerk (m/s^3)
 
-settings = termios.tcgetattr(sys.stdin)
-
-def getKey():
-	tty.setraw(sys.stdin.fileno())
-	select.select([sys.stdin], [], [], 0)
-	key = sys.stdin.read(1)
-	termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
-	return key
-
 @dataclass
 class DriveState:
+    """Dataclass representation for the input vector"""
     forward: bool
     right: bool
     left: bool
     backwards: bool
 
 class WASDControl(Node):
+    """This node can be used to send AckermannDriveStamped messages in a given interval to the /drive topic.
+    Actions:
+        W - Move Forward
+        A - Move Left
+        D - Move Right
+        S - Move Backwars
+
+    """
     def __init__(self):
         super().__init__("WASDControl") # "NodeName" will be displayed in rqt_graph
         self.timer = self.create_timer(0.5, self.publish_control)
@@ -82,7 +81,6 @@ class WASDControl(Node):
                 on_release=self._on_release)
         self.listener.start()
         self._stop_node = False # Can be used from a thread to stop the spinning of the node
-        sys.stdin = None
 
     def _create_drive_msg(self) -> AckermannDriveStamped:
         """Create a new AckermannDriveStamped message using the parameters of self.drive_state"""
