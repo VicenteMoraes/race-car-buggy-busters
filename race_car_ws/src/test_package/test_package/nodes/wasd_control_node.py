@@ -168,9 +168,12 @@ def main(args=None):
     rclpy.init(args=args)
 
     node = WASDControl()
-    rclpy.spin(node) # used to loop the node
-
-    rclpy.shutdown()
+    try:
+        rclpy.spin(node) # used to loop the node
+    except KeyboardInterrupt as e:
+        print(str(e))
+    finally:
+        rclpy.shutdown()
 
 if __name__ == "__main__":
     main()
