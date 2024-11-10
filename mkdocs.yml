@@ -4,6 +4,7 @@ nav:
   - Avai lab package: avai-lab-package.md
   - ROS2 test package: test_package.md
   - Requirements: requirements.md
+  - Wiki: wiki.md
 theme:
   name: material
   features:
