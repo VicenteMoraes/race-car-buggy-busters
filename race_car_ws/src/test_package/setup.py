@@ -15,7 +15,8 @@ setup(
     zip_safe=True,
     entry_points={
         'console_scripts': [
-            'test_node = test_package.nodes.test_node:main'
+            'test_node = test_package.nodes.test_node:main',
+            'yolo_node = test_package.nodes.yolo_node:main'
         ],
     },
 )
