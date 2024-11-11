@@ -19,7 +19,7 @@ This section will cover all documentation for the development process.
 
 This section will cover all hardware-related documentation.
 
-* [NVIDIA Jetson Orin NX 16GB](https://developer.nvidia.com/embedded/downloads#?search=Data%20Sheet&tx=$product,jetson_agx_orin,jetson_orin_nx,jetson_orin_nano)
+* [NVIDIA Jetson Orin NX 16GB](https://developer.nvidia.com/embedded/downloads#?search=Data%20Sheet&tx=$product,jetson_orin_nx)
 * [HOKUYO UST-10/20LX](https://www.hokuyo-aut.jp/search/single.php?serial=167#download)
 * [Programming Guides for HOKUYO Hardware](https://sourceforge.net/p/urgnetwork/wiki/top_en/)
 * [Intel RealSense Depth Camera D435i](https://www.intelrealsense.com/depth-camera-d435i/)
