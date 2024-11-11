@@ -31,7 +31,8 @@ This section will cover all hardware-related documentation.
 	* [YLM ROS2](https://github.com/Hokuyo-aut/ylm_ros2)
 	* [Receiving Distance Data](https://sourceforge.net/p/urgnetwork/wiki/scip_capture_en/)
 * [Intel RealSense Depth Camera D435i](https://www.intelrealsense.com/depth-camera-d435i/)
-	* [Intel RealSense & ROS 2](https://dev.intelrealsense.com/docs/ros2-wrapper)
+	* [Intel RealSense & ROS2](https://dev.intelrealsense.com/docs/ros2-wrapper)
+	* [Full RealSense & ROS2 readme](https://github.com/IntelRealSense/realsense-ros/blob/ros2-master/README.md)
 
 ### Methodical Docs
 
