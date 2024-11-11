@@ -2,4 +2,6 @@
 
 ## HOKUYO UST-10 (2D LiDAR)
 
-## Intel RealSense Depth Camera D435i (Depth + RBG Data + IR Data)
+Moved to a temp section. 
+
+## Intel RealSense Depth Camera D435i (Depth + RGB Data + IR Data)
