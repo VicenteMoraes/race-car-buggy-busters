@@ -11,6 +11,8 @@ classifiers = [
 
 dependencies = [
     "numpy",
+    "pydantic",
+    "tomlkit"
 ]
 
 [project.optional-dependencies]
