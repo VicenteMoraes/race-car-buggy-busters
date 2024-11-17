@@ -68,7 +68,7 @@ Here are all published topics from the racecar platform.
 - width: 1280
 - encoding: rgb8 -> 8-bit rgb
 - is_bigendian: 0
-- data: values -should- lie within the range of [0, 127]
+- data: values **should** lie within the range of [0, 127]
 	- no indication on what is "black" and what is "white" or the ordering of data (RBG per pixel (red value, then blue, then green) or RBG per array (red array, then blue, then green)
 	- data is too big to be displayed in an echo (it's 720 x 1280 x 3 data points)
 
@@ -141,7 +141,7 @@ Here are all published topics from the racecar platform.
 - width: 848
 - encoding: 16UC1 -> cv_16uc1 (16-bit unsigned greyscale)
 - is_bigendian: 0
-- data: values -should- lie within the range of [0, 255]
+- data: values **should** lie within the range of [0, 255]
 	- data is too big to be displayed in an echo (it's 480 x 848 data points)
 	- here the values (at least the echo'ed part) ist zero'ed out!
 
@@ -234,7 +234,7 @@ float64[3] translation Three-element translation vector, in meters
 - width: 848
 - encoding: mono8 -> 8-bit greyscale
 - is_bigendian: 0
-- data: values -should- lie within the range of [0, 127]
+- data: values **should** lie within the range of [0, 127]
 	- data is too big to be displayed in an echo (it's 480 x 848 data points)
 
 ### Right Infra Red
@@ -307,7 +307,7 @@ float64[3] translation Three-element translation vector, in meters
 - encoding: mono8 -> 8-bit greyscale
 - is_bigendian: 0
 - step: 848
-- data: values -should- lie within the range of [0, 127]
+- data: values **should** lie within the range of [0, 127]
 	- data is too big to be displayed in an echo (it's 480 x 848 data points)
 
 ### LiDAR
@@ -322,14 +322,14 @@ float64[3] translation Three-element translation vector, in meters
 - angle_min: -2.356194496154785 -> in radians
 - angle_max: 2.356194496154785 -> in radians
 - angle_increment: 0.004363323096185923 -> in radians
-- time_increment: 1.736111516947858-e-05- -> time between measurements (angle increments in secons)
+- time_increment: 1.736111516947858-e-05- -> time between measurements (angle increments in seconds)
 - scan_time: 0.02500000037252903 -> in seconds
 - range_min: 0.019999999552965164 -> in meters
 - range_max: 30.0 -> in meters
 - ranges: 
-	- -should- lie between ```range_min``` and ```range_max```
+	- **should** lie between ```range_min``` and ```range_max```
 	- other values should be discarded
-	- data is too big to be displayed in an echo (~ 1030 measurements in one scan)
+	- data is too big to be displayed in an echo ( ~ 1030 measurements in one scan)
 - intensities: [] -> not provided
 
 ### Sensors
@@ -391,9 +391,9 @@ float64[3] translation Three-element translation vector, in meters
 		  - key: Product Name
 		  - value: UST-10LX
 		  - key: Firmware Version
-		  - value: -receive error.-
+		  - value: **receive error.**
 		  - key: Firmware Date
-		  - value: -receive error.-
+		  - value: **receive error.**
 		  - key: Protocol Version
 		  - value: SCIP 2.2
 		  - key: Device ID
@@ -428,7 +428,7 @@ float64[3] translation Three-element translation vector, in meters
 		  - key: Minimum acceptable frequency (Hz)
 		  - value: '38.000000'
 		  - key: Maximum acceptable frequency (Hz)
-		    value: '42.000000'
+		  - value: '42.000000'
 
 #### /tf
 
@@ -437,15 +437,15 @@ float64[3] translation Three-element translation vector, in meters
 - frame_id: odom
 - child_frame_id: base_link
 - transform:
-	    - translation:
-		      - x: -5.116210464579059
-		      - y: 0.47674305243408466
-		      - z: 0.0
-	    - rotation:
-		      - x: 0.0
-		      - y: 0.0
-		      - z: -0.15724700085429322
-		      - w: -0.9875593049140542
+	- translation:
+		- x: -5.116210464579059
+		- y: 0.47674305243408466
+		- z: 0.0
+	- rotation:
+		- x: 0.0
+		- y: 0.0
+		- z: -0.15724700085429322
+		- w: -0.9875593049140542
 
 #### /tf_static
 
@@ -470,50 +470,50 @@ Static relations between the different image data (camera, depth, infra1, infra2
 		- z: 0.0
 		- w: 1.0
 
-###### 
+###### Aligned Depth to Infra1 Frame to Infra1 Opical Frame
 
 - frame_id: camera_aligned_depth_to_infra1_frame
 - child_frame_id: camera_infra1_optical_frame
 - transform:
-    	- translation:
-      		- x: 0.0
-      		- y: -0.0
-      		- z: -0.0
-    	- rotation:
-      		- x: -0.5
-      		- y: 0.4999999999999999
-      		- z: -0.5
-      		- w: 0.5000000000000001
+	- translation:
+		- x: 0.0
+		- y: -0.0
+		- z: -0.0
+	- rotation:
+		- x: -0.5
+		- y: 0.4999999999999999
+		- z: -0.5
+		- w: 0.5000000000000001
 
 ###### Camera Link to Aligned Depth to Infra1 Frame
 
 - frame_id: camera_link
 - child_frame_id: camera_aligned_depth_to_infra1_frame
 - transform:
-	    - translation:
-		      - x: 0.0
-		      - y: -0.0
-		      - z: -0.0
-	    - rotation:
-		      - x: 0.0
-		      - y: 0.0
-		      - z: 0.0
-		      - w: 1.0
+	- translation:
+		- x: 0.0
+		- y: -0.0
+		- z: -0.0
+	- rotation:
+		- x: 0.0
+		- y: 0.0
+		- z: 0.0
+		- w: 1.0
 
 ###### Camera Link to Infra2 Frame
 
 - frame_id: camera_link
 - child_frame_id: camera_infra2_frame
 - transform:
-	    - translation:
-		      - x: 0.0
-		      - y: -0.05005751922726631
-		      - z: -0.0
-	    - rotation:
-	      - x: 0.0
-	      - y: 0.0
-	      - z: 0.0
-	      - w: 1.0
+	- translation:
+		- x: 0.0
+		- y: -0.05005751922726631
+		- z: -0.0
+	- rotation:
+		- x: 0.0
+		- y: 0.0
+		- z: 0.0
+		- w: 1.0
 
 ###### Infra2 Frame to Infra2 Optical Frame
 
@@ -535,75 +535,75 @@ Static relations between the different image data (camera, depth, infra1, infra2
 - frame_id: camera_link
 - child_frame_id: camera_depth_frame
 - transform:
-	    - translation:
-		      - x: 0.0
-		      - y: -0.0
-		      - z: -0.0
-	    - rotation:
-		      - x: 0.0
-		      - y: 0.0
-		      - z: 0.0
-		      - w: 1.0
+	- translation:
+		- x: 0.0
+		- y: -0.0
+		- z: -0.0
+	- rotation:
+		- x: 0.0
+		- y: 0.0
+		- z: 0.0
+		- w: 1.0
 
 ###### Depth Frame to Depth Optical Frame
 
 - frame_id: camera_depth_frame
 - child_frame_id: camera_depth_optical_frame
 - transform:
-	    - translation:
-		      - x: 0.0
-		      - y: -0.0
-		      - z: -0.0
-	    - rotation:
-		      - x: -0.5
-		      - y: 0.4999999999999999
-		      - z: -0.5
-		      - w: 0.5000000000000001
+	- translation:
+		- x: 0.0
+		- y: -0.0
+		- z: -0.0
+	- rotation:
+		- x: -0.5
+		- y: 0.4999999999999999
+		- z: -0.5
+		- w: 0.5000000000000001
 
-###### Camere Link to Color Frame
+###### Camera Link to Color Frame
 
 - frame_id: camera_link
 - child_frame_id: camera_color_frame
 - transform:
-	    - translation:
-		      - x: -0.0004415937000885606
-		      - y: 0.014996647834777832
-		      - z: -1.0729166206147056e-05
-	    - rotation:
-		      - x: 0.006116042379289865
-		      - y: 0.00262435688637197
-		      - z: -0.000178089045220986
-		      - w: 0.9999778270721436
+	- translation:
+		- x: -0.0004415937000885606
+		- y: 0.014996647834777832
+		- z: -1.0729166206147056 **e-05**
+	- rotation:
+		- x: 0.006116042379289865
+		- y: 0.00262435688637197
+		- z: -0.000178089045220986
+		- w: 0.9999778270721436
 
 ###### Color Frame to Color Optical Frame
 
 - frame_id: camera_color_frame
 - child_frame_id: camera_color_optical_frame
 - transform:
-	    - translation:
-		      - x: 0.0
-		      - y: -0.0
-		      - z: -0.0
-	    - rotation:
-		      - x: -0.5
-		      - y: 0.4999999999999999
-		      - z: -0.5
-		      - w: 0.5000000000000001
+	- translation:
+		- x: 0.0
+		- y: -0.0
+		- z: -0.0
+	- rotation:
+		- x: -0.5
+		- y: 0.4999999999999999
+		- z: -0.5
+		- w: 0.5000000000000001
 
 ##### Laser
 
 - frame_id: base_link
 - child_frame_id: laser
 - transform:
-	    - translation:
-		      - x: 0.27
-		      - y: 0.0
-		      - z: 0.11
-	    - rotation:
-		      - x: 0.0
-		      - y: 0.0
-		      - z: 0.0
-		      - w: 1.0
+	- translation:
+		- x: 0.27
+		- y: 0.0
+		- z: 0.11
+	- rotation:
+		- x: 0.0
+		- y: 0.0
+		- z: 0.0
+		- w: 1.0
 
 
 ## Message Formats
