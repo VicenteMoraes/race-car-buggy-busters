@@ -474,7 +474,7 @@
                     </geometry>
                 </visual>
                 <sensor name='gpu_lidar' type='gpu_lidar'>"
-                <topic>lidar</topic>
+                <topic>scan</topic>
                 <update_rate>10</update_rate>
                 <ray>
                     <scan>

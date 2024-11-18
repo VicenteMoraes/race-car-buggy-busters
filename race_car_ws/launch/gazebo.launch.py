@@ -22,4 +22,11 @@ def generate_launch_description():
                 remappings=[],
                 output='screen'
             ),
+            Node(
+                package='ros_gz_bridge',
+                executable='parameter_bridge',
+                arguments=["/scan@sensor_msgs/msg/LaserScan@ignition.msgs.LaserScan",],
+                remappings=[],
+                output='screen'
+            ),
         ])
