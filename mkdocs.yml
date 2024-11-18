@@ -5,6 +5,7 @@ nav:
   - ROS2 test package: test_package.md
   - Requirements: requirements.md
   - Wiki: wiki.md
+  - Simulation: simulation.md
 theme:
   name: material
   features:
