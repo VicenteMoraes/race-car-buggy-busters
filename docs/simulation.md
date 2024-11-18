@@ -68,6 +68,20 @@ sudo apt install ros-humble-gazebo-ros-pkgs
 sudo apt install ros-humble-ros-gz
 ```
 
+Install all of the repository packages
+
+```sh
+pip install -e avai_lab
+```
+
+Install the `race_car_ws`
+
+```sh
+cd race_car_ws
+colcon build
+source install/setup.bash
+```
+
 ### Tutorials/Docs
 
 - [Bounding Box Camera](https://gazebosim.org/api/sensors/9/boundingbox_camera.html)

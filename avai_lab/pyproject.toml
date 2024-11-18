@@ -12,7 +12,8 @@ classifiers = [
 dependencies = [
     "numpy",
     "pydantic",
-    "tomlkit"
+    "tomlkit",
+    "pynput"
 ]
 
 [project.optional-dependencies]
