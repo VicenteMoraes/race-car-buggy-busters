@@ -61,20 +61,24 @@ class YoloConeDetector(Node):
     def image_callback(self, msg):
         frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
 
-        # Detect cones
-        yellow_mask = self.detect_color(frame, lower_bound=(20, 100, 100), upper_bound=(30, 255, 255))
-        red_mask = self.detect_color(frame, lower_bound=(0, 50, 50), upper_bound=(10, 255, 255))
+        blue_mask = self.detect_color(frame, lower_bound=(100, 150, 50), upper_bound=(130, 255, 255))
+        yellow_mask = self.detect_color(frame, lower_bound=(25, 100, 20), upper_bound=(35, 255, 255))
 
-        # Count non-zero pixels in masks (rough detection of objects)
+        blue_count = cv2.countNonZero(blue_mask)
         yellow_count = cv2.countNonZero(yellow_mask)
-        red_count = cv2.countNonZero(red_mask)
 
+        if blue_count > 500:
+            self.get_logger().info("Blue cone detected!")
         if yellow_count > 500:
             self.get_logger().info("Yellow cone detected!")
-        if red_count > 500: 
-            self.get_logger().info("Red cone detected!")
         else:
-            self.get_logger().info("No cone is detected")
+            self.get_logger().info("No yellow cones detected")
+
+        combined_mask = cv2.bitwise_or(blue_mask, yellow_mask)
+        detection_output = cv2.bitwise_and(frame, frame, mask=combined_mask)
+        cv2.imshow("Cone Detection", detection_output)
+        cv2.waitKey(1)
+
 
     @staticmethod
     def detect_color(frame, lower_bound, upper_bound):
