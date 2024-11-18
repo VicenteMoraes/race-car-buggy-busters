@@ -29,4 +29,18 @@ def generate_launch_description():
                 remappings=[],
                 output='screen'
             ),
+            Node(
+                package='ros_gz_bridge',
+                executable='parameter_bridge',
+                arguments=["/camera_info@sensor_msgs/msg/CameraInfo@ignition.msgs.CameraInfo",],
+                remappings=[("/camera_info", "/camera/realsense2_camera/color/camera_info")],
+                output='screen'
+            ),
+            Node(
+                package='ros_gz_bridge',
+                executable='parameter_bridge',
+                arguments=["/camera@sensor_msgs/msg/Image@ignition.msgs.Image",],
+                remappings=[("/camera", "/camera/realsense2_camera/color/image_raw")],
+                output='screen'
+            ),
         ])
