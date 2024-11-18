@@ -43,4 +43,11 @@ def generate_launch_description():
                 remappings=[("/camera", "/camera/realsense2_camera/color/image_raw")],
                 output='screen'
             ),
+            Node(
+                package='ros_gz_bridge',
+                executable='parameter_bridge',
+                arguments=["/imu@sensor_msgs/msg/Imu@ignition.msgs.IMU",],
+                remappings=[],
+                output='screen'
+            ),
         ])
