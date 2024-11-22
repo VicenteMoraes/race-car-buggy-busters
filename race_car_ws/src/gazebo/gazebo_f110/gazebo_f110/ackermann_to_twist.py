@@ -4,11 +4,13 @@ from rclpy.node import Node
 
 from ackermann_msgs.msg import AckermannDriveStamped
 from geometry_msgs.msg import Twist
-#from gz.msgs10 import Twist
 
-class MyNode(Node):
+class AckermannToTwist(Node):
+    """Node that subscribes to the "/drive" topic, collects all AckermannDriveStamped msgs and
+    converts them to Twist msgs which are published to the "/cmd_vel" topic.
+    """
     def __init__(self):
-        super().__init__("NodeName") # "NodeName" will be displayed in rqt_graph
+        super().__init__("AckermannToTwist") # "NodeName" will be displayed in rqt_graph
         self.drive_subscriber = self.create_subscription(AckermannDriveStamped, "/drive",
                                                          self.drive_callback, 10)
         self.twist_publisher = self.create_publisher(Twist, "/cmd_vel", 10)
@@ -22,7 +24,7 @@ class MyNode(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    node = MyNode()
+    node = AckermannToTwist()
     rclpy.spin(node) # used to loop the node
 
     rclpy.shutdown()

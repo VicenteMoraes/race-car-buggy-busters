@@ -1,8 +1,10 @@
 site_name: AVAI Lab
 nav:
   - Home: index.md
-  - Avai lab package: avai-lab-package.md
-  - ROS2 test package: test_package.md
+  - Source Code: 
+    - ROS2 test package: test_package.md
+    - ROS2 Gazebo F110: gazebo_f110_package.md
+    - Avai lab package: avai-lab-package.md
   - Requirements: requirements.md
   - Wiki: wiki.md
   - Simulation: simulation.md
