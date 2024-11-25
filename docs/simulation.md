@@ -78,6 +78,12 @@ colcon build
 source install/setup.bash
 ```
 
+Add the following line to your `~/.bashrc` file. This assumes that you have the repository in your home folder!
+
+```txt
+export IGN_GAZEBO_RESOURCE_PATH=/home/$USER/race-car-buggy-busters/race_car_ws/install/gazebo_f110/share/gazebo_f110/model
+```
+
 ### Tutorials/Docs
 
 - [Bounding Box Camera](https://gazebosim.org/api/sensors/9/boundingbox_camera.html)
