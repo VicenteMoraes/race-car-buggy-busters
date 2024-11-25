@@ -458,6 +458,22 @@
                     <visualize>true</visualize>
                     <topic>camera</topic>
                 </sensor>
+            <sensor name="depth_camera1" type="depth_camera">
+              <update_rate>10</update_rate>
+              <topic>depth_camera</topic>
+                  <camera>
+                    <horizontal_fov>1.05</horizontal_fov>
+                    <image>
+                      <width>256</width>
+                      <height>256</height>
+                      <format>R_FLOAT32</format>
+                    </image>
+                    <clip>
+                      <near>0.1</near>
+                      <far>10.0</far>
+                    </clip>
+                  </camera>
+              </sensor>
             </link>
 
             <link name="lidar_link">

@@ -33,11 +33,13 @@ def generate_launch_description():
                 "/scan@sensor_msgs/msg/LaserScan@ignition.msgs.LaserScan",
                 "/camera_info@sensor_msgs/msg/CameraInfo@ignition.msgs.CameraInfo",
                 "/camera@sensor_msgs/msg/Image@ignition.msgs.Image",
-                "/imu@sensor_msgs/msg/Imu@ignition.msgs.IMU"
+                "/imu@sensor_msgs/msg/Imu@ignition.msgs.IMU",
+                "/depth_camera@sensor_msgs/msg/Image@ignition.msgs.Image",
                 ],
             remappings=[
                 ("/camera_info", "/camera/realsense2_camera/color/camera_info"),
-                ("/camera", "/camera/realsense2_camera/color/image_raw")
+                ("/camera", "/camera/realsense2_camera/color/image_raw"),
+                ("/depth_camera", "/camera/realsense2_camera/depth/image_rect_raw")
                 ],
             output='screen'
             )
