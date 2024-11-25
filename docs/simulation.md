@@ -101,4 +101,18 @@ The conversion from the `AckermannDriveStamped` message to the `Twist` message i
 | ignition.msgs.Image | sensor_msgs/msg/Image |
 
 
+## Plugins
 
+Some plugins are required to get access to certain services and functions in Gazebo
+
+### ignition-gazebo-user-commands-system
+
+[Spawn URDF Tutorial](https://gazebosim.org/docs/fortress/spawn_urdf/)
+
+This plugin is required to get access to the `/world/<world_name>/create` service which can be used to spawn `.sdf` or `.urdf` files.
+
+Example:
+
+```sh
+ign service -s /world/car_world/create --reqtype ignition.msgs.EntityFactory --reptype ignition.msgs.Boolean --timeout 1000 --req 'sdf_filename: "/path/to/model.sdf", name: "my_cone"
+```
