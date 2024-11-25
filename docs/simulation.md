@@ -16,6 +16,7 @@ The bridge will map the following topics and convert the message types from gaze
 
 - `/camera/realsense2_camera/color/camera_info`
 - `/camera/realsense2_camera/color/image_raw`
+- `/camera/realsense2_camera/depth/image_rect_raw`
 - `/imu`
 - `/scan`
 
