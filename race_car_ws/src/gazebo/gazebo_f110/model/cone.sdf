@@ -13,10 +13,9 @@
         </visual>
         <collision name='visual'>
           <geometry>
-           <mesh>
-              <uri>cone_mesh.dae</uri>
-              <scale>0.25 0.25 0.25</scale>
-            </mesh>
+           <box>
+               <size> 0.25 0.25 0.25</size>
+            </box>
           </geometry>
         </collision>
     </link>

@@ -124,6 +124,10 @@ Example:
 ign service -s /world/car_world/create --reqtype ignition.msgs.EntityFactory --reptype ignition.msgs.Boolean --timeout 1000 --req 'sdf_filename: "/path/to/model.sdf", name: "my_cone"
 ```
 
+### Physics
+
+[Parameters of the Physics engine](http://sdformat.org/spec?ver=1.6&elem=physics)
+
 ## Include other sdf files
 
 Either using an absolute path
@@ -150,3 +154,5 @@ Then you can use it like this:
    <uri>model://aws_robomaker_warehouse_RoofB_01</uri>
 </include>
 ```
+
+
