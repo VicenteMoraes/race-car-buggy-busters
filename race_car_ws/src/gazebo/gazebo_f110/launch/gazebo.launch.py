@@ -49,7 +49,7 @@ def generate_launch_description():
                 DeclareLaunchArgument(
                     'world',
                     default_value='plane',
-                    choices=['plane'],
+                    choices=['plane', 'circle'],
                     description='World to load into Gazebo'
                     ),
                 SetLaunchConfiguration(name='world_file', 

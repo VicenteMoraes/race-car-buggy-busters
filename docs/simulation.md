@@ -22,10 +22,11 @@ The bridge will map the following topics and convert the message types from gaze
 
 ### Start simulation
 
-The simulation can be started using the `gazebo_f110 gazebo.launch.py` launch file which is installed alongside the `gazebo_f110` package.
+The simulation can be started using the `gazebo_f110 gazebo.launch.py` launch file which is installed alongside the `gazebo_f110` package. For the `world` argument, the options `plane` and `circle` are availabel. You can check for more cli arguments using `
+ros2 launch gazebo_f110 gazebo.launch.py -s`
 
 ```sh
-ros2 launch gazebo_f110 gazebo.launch.py
+ros2 launch gazebo_f110 gazebo.launch.py world:=plane
 ```
 
 You can run the simulation on its own using the `race-car-buggy-busters/race_car_ws/src/gazebo/gazebo_f110/world/plane.sdf` world.
