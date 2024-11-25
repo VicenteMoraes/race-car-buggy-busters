@@ -33,7 +33,7 @@ ign gazebo -v 4 race_car_ws/src/gazebo/gazebo_f110/world/plane.sdf
 Now start the Bridge for gazebo using the `race-car-buggy-busters/race_car_ws/launch/gazebo.launch.py` file in a different terminal. 
 
 ```sh
-ros2 launch race_car_ws/launch/gazebo.launch.py
+ros2 launch gazebo_f110 gazebo.launch.py
 ```
 
 The bridge also starts the [WASD control node](./test_package.md#wasd_control_node)
