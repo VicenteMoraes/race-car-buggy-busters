@@ -21,22 +21,17 @@ The bridge will map the following topics and convert the message types from gaze
 
 ### Start simulation
 
-As of now it is a bit tedious to start the simulation but it will become better over time.
-All paths provided here will be relative to the repository so adjust them accordingly.
-
-Start Gazebo using the `race-car-buggy-busters/race_car_ws/src/gazebo/gazebo_f110/world/plane.sdf` world.
-
-```sh
-ign gazebo -v 4 race_car_ws/src/gazebo/gazebo_f110/world/plane.sdf
-```
-
-Now start the Bridge for gazebo using the `race-car-buggy-busters/race_car_ws/launch/gazebo.launch.py` file in a different terminal. 
+The simulation can be started using the `gazebo_f110 gazebo.launch.py` launch file which is installed alongside the `gazebo_f110` package.
 
 ```sh
 ros2 launch gazebo_f110 gazebo.launch.py
 ```
 
-The bridge also starts the [WASD control node](./test_package.md#wasd_control_node)
+You can run the simulation on its own using the `race-car-buggy-busters/race_car_ws/src/gazebo/gazebo_f110/world/plane.sdf` world.
+
+```sh
+ign gazebo -v 4 race_car_ws/src/gazebo/gazebo_f110/world/plane.sdf
+```
 
 
 ### Dependencies
