@@ -58,7 +58,7 @@ def generate_launch_description():
                IncludeLaunchDescription(
                    PythonLaunchDescriptionSource(gz_launch_path),
                    launch_arguments={
-                       'ign_args': [PathJoinSubstitution([pkg_gazebo_f110, LaunchConfiguration('world_file')])],
+                       'ign_args': [PathJoinSubstitution([pkg_gazebo_f110, "world", LaunchConfiguration('world_file')])],
                        'on_exit_shutdown': 'True'
                        }.items(),
                    )

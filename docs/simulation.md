@@ -116,3 +116,30 @@ Example:
 ```sh
 ign service -s /world/car_world/create --reqtype ignition.msgs.EntityFactory --reptype ignition.msgs.Boolean --timeout 1000 --req 'sdf_filename: "/path/to/model.sdf", name: "my_cone"
 ```
+
+## Include other sdf files
+
+Either using an absolute path
+```xml
+<include>
+    <uri>file://path/to/model.sdf</uri>
+    <pose>1 1 0 0 0 0</pose>
+</include>
+```
+
+or setting the path in the `IGN_GAZEBO_RESOURCE_PATH` environment variable. In this case the model needs to be well defined using an `.sdf` file and a `.config` file. In [this](https://robotics.stackexchange.com/questions/104445/loading-another-model-from-an-sdf-ros2-humble) StackOverflow post the file structure is recommended to be:
+- Models
+    - my_model
+        - model.config
+        - model.sdf
+        - meshes
+            - mesh1.dae
+            - ...
+
+Then you can use it like this:
+
+```xml
+<include>
+   <uri>model://aws_robomaker_warehouse_RoofB_01</uri>
+</include>
+```
