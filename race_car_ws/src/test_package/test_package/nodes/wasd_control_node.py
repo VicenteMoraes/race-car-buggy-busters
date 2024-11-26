@@ -134,8 +134,9 @@ class WASDControl(Node):
             case KeyCode(char="s"):
                 self.drive_state.backwards = True
             case _:
-                self.listener.stop()
-                self._stop_node = True
+                pass
+                #self.listener.stop()
+                #self._stop_node = True
         return True
 
     def _on_release(self, key: Key | KeyCode | None):
@@ -150,8 +151,9 @@ class WASDControl(Node):
             case KeyCode(char="s"):
                 self.drive_state.backwards = False
             case _:
-                self.listener.stop()
-                self._stop_node = True
+                pass
+                #self.listener.stop()
+                #self._stop_node = True
         return True
 
     def publish_control(self):
