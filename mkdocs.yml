@@ -8,6 +8,8 @@ nav:
   - Requirements: requirements.md
   - Wiki: wiki.md
   - Simulation: simulation.md
+  - Sensor data: sensor_data.md
+  - Message fromats: message_formats.md
 theme:
   name: material
   features:
