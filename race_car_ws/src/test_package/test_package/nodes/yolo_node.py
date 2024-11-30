@@ -6,8 +6,8 @@ from std_msgs.msg import Header
 import cv2
 from cv_bridge import CvBridge
 import numpy as np
-
-
+from ultralytics import YOLO
+import os
 class YoloConeDetector(Node):
     def __init__(self):
         super().__init__('yolo_cone_detector')
@@ -17,7 +17,14 @@ class YoloConeDetector(Node):
             self.image_callback,
             10)
         self.bridge = CvBridge()
-        self.get_logger().info("Cone Detector Node Initialized")
+        #node_dir = os.path.dirname(os.path.realpath(__file__))
+        #model_path = os.path.join(node_dir, '../../runs/detect/train/weights/best.pt')
+        self.model = YOLO('/home/myuser/Desktop/race-car-buggy-busters/race_car_ws/src/test_package/runs/detect/train/weights/best.pt')
+        self.colors = {
+            "yellow_cones": (0, 255, 255),  # Yellow
+            "orange_cones": (0, 165, 255),  # Orange
+            "blue_cones": (255, 0, 0)       # Blue
+        }
 
 
     def camera_callback(self, msg):
@@ -56,36 +63,36 @@ class YoloConeDetector(Node):
         Channels: {cv_image.shape[2] if len(cv_image.shape) > 2 else 1}
         """
         self.get_logger().info(msg_str)
-
-
+    
     def image_callback(self, msg):
-        frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+        try:
+            cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+        except Exception as e:
+            self.get_logger().error(f"Failed to convert image: {e}")
+            return
+        
+        # Run YOLOv8 detection
+        results = self.model(cv_image)
+        
+        # Diplay results
+        self.visualize_results(cv_image, results[0])
 
-        blue_mask = self.detect_color(frame, lower_bound=(100, 150, 50), upper_bound=(130, 255, 255))
-        yellow_mask = self.detect_color(frame, lower_bound=(25, 100, 20), upper_bound=(35, 255, 255))
-
-        blue_count = cv2.countNonZero(blue_mask)
-        yellow_count = cv2.countNonZero(yellow_mask)
-
-        if blue_count > 500:
-            self.get_logger().info("Blue cone detected!")
-        if yellow_count > 500:
-            self.get_logger().info("Yellow cone detected!")
-        else:
-            self.get_logger().info("No yellow cones detected")
-
-        combined_mask = cv2.bitwise_or(blue_mask, yellow_mask)
-        detection_output = cv2.bitwise_and(frame, frame, mask=combined_mask)
-        cv2.imshow("Cone Detection", detection_output)
+    def visualize_results(self, image, results):
+        # Draw bounding boxes on the cones
+        for box in results.boxes:
+            x1, y1, x2, y2 = map(int, box.xyxy[0])
+            confidence = float(box.conf[0])
+            cls = int(box.cls[0])
+            label = results.names[cls]
+            
+            color = self.colors.get(label, (0, 255, 0))
+            cv2.rectangle(image, (x1, y1), (x2, y2), color, 2)
+            text = f"{label} {confidence:.2f}"
+            cv2.putText(image, text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+        
+        # Display image
+        cv2.imshow('YOLO Detection', image)
         cv2.waitKey(1)
-
-
-    @staticmethod
-    def detect_color(frame, lower_bound, upper_bound):
-        """Detect specific color in an image using HSV color space."""
-        hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        mask = cv2.inRange(hsv_frame, np.array(lower_bound), np.array(upper_bound))
-        return mask
 
 
 def main(args=None):
