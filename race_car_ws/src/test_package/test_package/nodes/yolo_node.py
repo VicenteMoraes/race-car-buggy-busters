@@ -1,11 +1,8 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
-from sensor_msgs.msg import CameraInfo
-from std_msgs.msg import Header
 import cv2
 from cv_bridge import CvBridge
-import numpy as np
 from ultralytics import YOLO
 import os
 class YoloConeDetector(Node):
@@ -25,6 +22,14 @@ class YoloConeDetector(Node):
             "orange_cones": (0, 165, 255),  # Orange
             "blue_cones": (255, 0, 0)       # Blue
         }
+
+        self.current_depth_image = None
+        self.depth_image_sub = self.create_subscription(
+            Image,
+            '/depth/image_rect_raw',
+            self.depth_image_callback,
+            10
+        )
 
 
     def camera_callback(self, msg):
@@ -77,18 +82,32 @@ class YoloConeDetector(Node):
         # Diplay results
         self.visualize_results(cv_image, results[0])
 
+    def depth_image_callback(self, msg):
+        try:
+            self.current_depth_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
+        except Exception as e:
+            self.get_logger().error(f"Failed to convert depth image: {e}")
+
     def visualize_results(self, image, results):
+        if self.current_depth_image is None:
+            self.get_logger().warning("No depth image received yet.")
+            return
         # Draw bounding boxes on the cones
         for box in results.boxes:
             x1, y1, x2, y2 = map(int, box.xyxy[0])
-            confidence = float(box.conf[0])
-            cls = int(box.cls[0])
-            label = results.names[cls]
+            cx, cy = (x1 + x2) // 2, (y1 + y2) // 2  # Center of the bounding box
             
+            try:
+                depth_value = self.current_depth_image[cy, cx]
+            except IndexError:
+                self.get_logger().warning(f"Depth value out of bounds for box at ({cx}, {cy})")
+                continue
+
+            self.get_logger().info(f"Detected {results.names[int(box.cls[0])]} at distance: {depth_value:.2f} milimeters")
+            label = f"{results.names[int(box.cls[0])]} {depth_value:.2f}mm"
             color = self.colors.get(label, (0, 255, 0))
             cv2.rectangle(image, (x1, y1), (x2, y2), color, 2)
-            text = f"{label} {confidence:.2f}"
-            cv2.putText(image, text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+            cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
         
         # Display image
         cv2.imshow('YOLO Detection', image)
