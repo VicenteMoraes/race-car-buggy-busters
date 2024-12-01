@@ -1,17 +1,14 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>test_package</name>
-  <version>0.0.1</version>
-  <description>Test package for installation</description>
-  <maintainer email="dummy@todo.todo">ossmos</maintainer>
+  <name>gazebo_f110</name>
+  <version>0.0.0</version>
+  <description>Bridge for Gazebo DiffDrive and F110</description>
+  <maintainer email="todo@mail.com">ossmos</maintainer>
   <license>MIT License</license>
 
   <depend>rclpy</depend>
   <depend>ackermann_msgs</depend>
-  <depend>sensor_msgs</depend>
-  <depend>std_msgs</depend>
-  <depend>cv_bridge</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
