@@ -24,7 +24,7 @@ class M2P(Node):
         self.max_speed = self.config.car_platform.max_speed # m/s
         self.max_acceleration = self.config.car_platform.max_acceleration # m/s
         self.max_steering = self.config.car_platform.max_steering_angle # radians/s
-        self.target = np.array([1, 20])
+        self.target = np.array([10, 10])
 
     def odom_callback(self, odom_msg: Odometry):
         pos = np.array([odom_msg.pose.pose.position.x, odom_msg.pose.pose.position.y]) # We only need to calculate in 2D
@@ -32,6 +32,8 @@ class M2P(Node):
         orientation_rot = quat_to_rot_vec(odom_msg.pose.pose.orientation.z, odom_msg.pose.pose.orientation.w)
         steering_angle = rot_from_vec(direction_vec) - orientation_rot # The rotation the ego vehicle must undergo
         distance = np.linalg.norm(direction_vec)
+        if distance < 1:
+            distance = 0 # This should make the vehicle stop
 
 
         t = self.get_clock().now()
