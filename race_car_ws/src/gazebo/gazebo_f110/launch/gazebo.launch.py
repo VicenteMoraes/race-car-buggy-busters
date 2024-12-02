@@ -68,7 +68,7 @@ def generate_launch_description():
             )
     return LaunchDescription([
         gazebo_launch_group,
-        wasd_node,
+        #wasd_node,
         ackermann_to_twist_node,
         ros_gz_bridge_node,
         ])
