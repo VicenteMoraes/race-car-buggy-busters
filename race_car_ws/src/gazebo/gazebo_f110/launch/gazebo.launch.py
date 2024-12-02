@@ -35,11 +35,13 @@ def generate_launch_description():
                 "/camera@sensor_msgs/msg/Image@ignition.msgs.Image",
                 "/imu@sensor_msgs/msg/Imu@ignition.msgs.IMU",
                 "/depth_camera@sensor_msgs/msg/Image@ignition.msgs.Image",
+                "/model/f110_car/odometry@nav_msgs/msg/Odometry@ignition.msgs.Odometry",
                 ],
             remappings=[
                 ("/camera_info", "/camera/realsense2_camera/color/camera_info"),
                 ("/camera", "/camera/realsense2_camera/color/image_raw"),
-                ("/depth_camera", "/camera/realsense2_camera/depth/image_rect_raw")
+                ("/depth_camera", "/camera/realsense2_camera/depth/image_rect_raw"),
+                ("/model/f110_car/odometry", "/odom"),
                 ],
             output='screen'
             )
