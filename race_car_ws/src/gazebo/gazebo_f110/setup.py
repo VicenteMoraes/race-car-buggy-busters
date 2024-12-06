@@ -22,7 +22,8 @@ setup(
     zip_safe=True,
     entry_points={
         'console_scripts': [
-            "ackermann_to_twist = gazebo_f110.ackermann_to_twist:main"
+            "ackermann_to_twist = gazebo_f110.ackermann_to_twist:main",
+            "world_pose_to_odom = gazebo_f110.world_pose_to_odom:main"
         ],
     },
 )

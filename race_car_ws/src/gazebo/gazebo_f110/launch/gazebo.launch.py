@@ -19,11 +19,23 @@ def generate_launch_description():
             executable="wasd_control_node",
             name="wasd_control"
             )
+    m2p_node = Node(
+            package="f110_car",
+            namespace="f110",
+            executable="move_to_point",
+            name="move_to_point"
+            )
     ackermann_to_twist_node = Node(
             package="gazebo_f110",
             namespace="gazebo",
             executable="ackermann_to_twist",
             name="ackermann_to_twist"
+            )
+    world_pose_to_odom_node = Node(
+            package="gazebo_f110",
+            namespace="gazebo",
+            executable="world_pose_to_odom",
+            name="world_pose_to_odom"
             )
     ros_gz_bridge_node = Node(
             package='ros_gz_bridge',
@@ -35,13 +47,14 @@ def generate_launch_description():
                 "/camera@sensor_msgs/msg/Image@ignition.msgs.Image",
                 "/imu@sensor_msgs/msg/Imu@ignition.msgs.IMU",
                 "/depth_camera@sensor_msgs/msg/Image@ignition.msgs.Image",
-                "/model/f110_car/odometry@nav_msgs/msg/Odometry@ignition.msgs.Odometry",
+                #"/model/f110_car/odometry@nav_msgs/msg/Odometry@ignition.msgs.Odometry",
+                "/world/car_world/pose/info@geometry_msgs/msg/PoseArray@ignition.msgs.Pose_V",
                 ],
             remappings=[
                 ("/camera_info", "/camera/realsense2_camera/color/camera_info"),
                 ("/camera", "/camera/realsense2_camera/color/image_raw"),
                 ("/depth_camera", "/camera/realsense2_camera/depth/image_rect_raw"),
-                ("/model/f110_car/odometry", "/odom"),
+                #("/model/f110_car/odometry", "/odom"),
                 ],
             output='screen'
             )
@@ -68,6 +81,8 @@ def generate_launch_description():
             )
     return LaunchDescription([
         gazebo_launch_group,
+        m2p_node,
+        world_pose_to_odom_node,
         #wasd_node,
         ackermann_to_twist_node,
         ros_gz_bridge_node,
