@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.spatial.transform import Rotation
 
 def to_unit_vec(v: np.ndarray):
     """Return the normalized unit vector (length = 1) of a given vector"""
@@ -12,7 +13,10 @@ def angle_between(v1: np.ndarray, v2: np.ndarray):
 
 def quat_to_rot_vec(z: float, w: float) -> float:
     """Calculate the rotation in radians on the z-axis given the (z, w) component of a quaternion"""
-    return 2 * np.arctan2(z, w)
+    rad =  2 * np.arctan2(z, w)
+    if rad < 0:
+        rad += 2 * np.pi
+    return rad
 
 def get_direction_vec(start: np.ndarray, end: np.ndarray) -> np.ndarray:
     """Calculate the vector between a start and an end point"""
@@ -20,4 +24,7 @@ def get_direction_vec(start: np.ndarray, end: np.ndarray) -> np.ndarray:
 
 def rot_from_vec(v: np.ndarray):
     """Calculate the rotation in radian from a vector"""
-    return np.arctan2(*v[::-1])
+    rad = np.arctan2(*v[::-1])
+    if rad < 0:
+        rad += 2 * np.pi
+    return rad
