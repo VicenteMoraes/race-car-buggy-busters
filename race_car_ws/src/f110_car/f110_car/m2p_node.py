@@ -11,7 +11,8 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseStamped
 
 class M2P(Node):
-    """Node that subscribes to the "/drive" topic, collects all AckermannDriveStamped msgs and
+    """
+    Node that subscribes to the "/drive" topic, collects all AckermannDriveStamped msgs and
     converts them to Twist msgs which are published to the "/cmd_vel" topic.
     """
     def __init__(self):
@@ -40,11 +41,8 @@ class M2P(Node):
         target_position = np.array([point_msg.pose.position.x, point_msg.pose.position.y])
         target_orientation = quat_to_rot_vec(point_msg.pose.orientation.z, point_msg.pose.orientation.w)
         new_point = (target_position, target_orientation)
-        if self.target_stack:
-            if not np.array_equal(new_point[0], self.last_point[0]) or not (new_point[1] == self.last_point[1]):
-                self.last_point = new_point
-                self.target_stack.append(new_point)
-                self.get_logger().info(f"Received new target point: {self.last_point[0]}, rotation: {self.last_point[1]}")
+        if self.target_stack and (np.array_equal(new_point[0], self.last_point[0]) and (new_point[1] == self.last_point[1])):
+            return
         else:
             self.last_point = new_point
             self.target_stack.append(new_point)
@@ -60,7 +58,7 @@ class M2P(Node):
             self.current_target = self.target_stack.pop(0)
 
         if not self.current_target:
-            self.get_logger().warn(f"No current target available.")
+            # self.get_logger().warn(f"No current target available.")
             return
 
         # Extract target and vehicle state
@@ -71,12 +69,11 @@ class M2P(Node):
         # Calculate distance and steering angle
         distance = np.linalg.norm(direction_vec)
         direction_rot = rot_from_vec(direction_vec)
-        target_orientation = self.current_target[1]
         delta_direction = direction_rot - orientation_rot
 
-        if target_orientation is not None: # Point has defined rotation
-            delta_rotation = target_orientation - orientation_rot
-            w = max(0, min(1, 1 - distance / 5.0))
+        if self.current_target[1] is not None: # Point has defined rotation
+            delta_rotation = self.current_target[1] - orientation_rot
+            w = max(0, min(1, 1 - distance / 2.0))
             steering_angle = (1 - w) * delta_direction + w * delta_rotation
         else: # Default behavior if no rotation given
             steering_angle = delta_direction
