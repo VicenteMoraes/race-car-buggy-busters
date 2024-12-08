@@ -39,7 +39,10 @@ class M2P(Node):
         Callback to handle new target points. Pushes received point to target stack.
         """
         target_position = np.array([point_msg.pose.position.x, point_msg.pose.position.y])
-        target_orientation = quat_to_rot_vec(point_msg.pose.orientation.z, point_msg.pose.orientation.w)
+        target_orientation = None
+        if point_msg.pose.orientation.z != 0.0 and point_msg.pose.orientation.w != 1.0:
+            target_orientation = quat_to_rot_vec(point_msg.pose.orientation.z, point_msg.pose.orientation.w)
+            self.get_logger().info("Point has rotation.")
         new_point = (target_position, target_orientation)
         if self.target_stack and (np.array_equal(new_point[0], self.last_point[0]) and (new_point[1] == self.last_point[1])):
             return
@@ -75,8 +78,10 @@ class M2P(Node):
             delta_rotation = self.current_target[1] - orientation_rot
             w = max(0, min(1, 1 - distance / 2.0))
             steering_angle = (1 - w) * delta_direction + w * delta_rotation
+            self.get_logger().info("Calculation with rotation.")
         else: # Default behavior if no rotation given
             steering_angle = delta_direction
+            self.get_logger().info("Calculation without rotation.")
 
         # Target switching
         if distance < 1:
