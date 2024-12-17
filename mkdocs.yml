@@ -2,6 +2,7 @@ site_name: AVAI Lab
 nav:
   - Home: index.md
   - Source Code: 
+    - ROS2 F110 package: f110_car_package.md
     - ROS2 test package: test_package.md
     - ROS2 Gazebo F110: gazebo_f110_package.md
     - Avai lab package: avai-lab-package.md
@@ -68,3 +69,6 @@ plugins:
             - sys.path.append(Path("./race_car_ws/src/test_package/").resolve())
           selection:
             new_path_syntax: true
+
+extra_javascript:
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
