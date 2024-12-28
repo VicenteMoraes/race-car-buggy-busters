@@ -31,25 +31,20 @@ class M2P(Node):
         self.max_steering = self.config.car_platform.max_steering_angle # radians/s
 
         self.target_stack = [] # Stack to hold upcoming target points
-        self.current_target = None # Current target point (with optional rotation)
-        self.last_point = None
+        self.current_target = None # Current target point
+        self.last_point = None # Last received point
 
     def point_callback(self, point_msg: PoseStamped):
         """
         Callback to handle new target points. Pushes received point to target stack.
         """
-        target_position = np.array([point_msg.pose.position.x, point_msg.pose.position.y])
-        target_orientation = None
-        if point_msg.pose.orientation.z != 0.0 and point_msg.pose.orientation.w != 1.0:
-            target_orientation = quat_to_rot_vec(point_msg.pose.orientation.z, point_msg.pose.orientation.w)
-            self.get_logger().info("Point has rotation.")
-        new_point = (target_position, target_orientation)
-        if self.target_stack and (np.array_equal(new_point[0], self.last_point[0]) and (new_point[1] == self.last_point[1])):
+        new_point = np.array([point_msg.pose.position.x, point_msg.pose.position.y])
+        if self.target_stack and (np.array_equal(new_point, self.last_point)):
             return
         else:
             self.last_point = new_point
             self.target_stack.append(new_point)
-            self.get_logger().info(f"Received new target point: {self.last_point[0]}, rotation: {self.last_point[1]}")
+            self.get_logger().info(f"Received new target point: {self.last_point[0]}")
 
     def odom_callback(self, odom_msg: Odometry):
         """
@@ -61,30 +56,20 @@ class M2P(Node):
             self.current_target = self.target_stack.pop(0)
 
         if not self.current_target:
-            # self.get_logger().warn(f"No current target available.")
             return
 
         # Extract target and vehicle state
         pos = np.array([odom_msg.pose.pose.position.x, odom_msg.pose.pose.position.y]) # We only need to calculate in 2D
-        direction_vec = get_direction_vec(pos, self.current_target[0])
+        direction_vec = get_direction_vec(pos, self.current_target)
         orientation_rot = quat_to_rot_vec(odom_msg.pose.pose.orientation.z, odom_msg.pose.pose.orientation.w)
 
         # Calculate distance and steering angle
         distance = np.linalg.norm(direction_vec)
         direction_rot = rot_from_vec(direction_vec)
-        delta_direction = direction_rot - orientation_rot
-
-        if self.current_target[1] is not None: # Point has defined rotation
-            delta_rotation = self.current_target[1] - orientation_rot
-            w = max(0, min(1, 1 - distance / 2.0))
-            steering_angle = (1 - w) * delta_direction + w * delta_rotation
-            self.get_logger().info("Calculation with rotation.")
-        else: # Default behavior if no rotation given
-            steering_angle = delta_direction
-            self.get_logger().info("Calculation without rotation.")
+        steering_angle = direction_rot - orientation_rot
 
         # Target switching
-        if distance < 1:
+        if distance < 0.25:
             if self.target_stack:
                 self.get_logger().info("Switching to next target point.")
                 self.current_target = self.target_stack.pop(0)
