@@ -20,7 +20,7 @@ class M2P(Node):
         self.odom_subscriber = self.create_subscription(Odometry, "/odom",
                                                          self.odom_callback, 10)
         self.point_subscriber = self.create_subscription(PoseStamped, "/target_points",
-                                                         self.point_callback, 10)
+                                                         self.point_callback, 100)
         self.publisher = self.create_publisher(AckermannDriveStamped, "/drive", 10)
 
         self.config = load_config()
@@ -52,10 +52,10 @@ class M2P(Node):
         """
 
         # Handle target & target stack
-        if not self.current_target and self.target_stack:
+        if self.current_target is None and self.target_stack:
             self.current_target = self.target_stack.pop(0)
 
-        if not self.current_target:
+        if self.current_target is None:
             return
 
         # Extract target and vehicle state
