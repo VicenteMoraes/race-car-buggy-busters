@@ -13,7 +13,7 @@ class WorldPoseToOdom(Node):
     """
     def __init__(self):
         super().__init__("WorldPoseToOdom") # "NodeName" will be displayed in rqt_graph
-        self.drive_subscriber = self.create_subscription(PoseArray, "/world/car_world/pose/info",
+        self.drive_subscriber = self.create_subscription(PoseArray, "/transformed_pose",
                                                          self.pose_array_callback, 10)
         self.odom_publisher = self.create_publisher(Odometry, "/odom", 10)
 
