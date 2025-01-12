@@ -7,36 +7,32 @@ class GazeboPoseTransformer(Node):
     def __init__(self):
         super().__init__("gazebo_pose_transformer")
         self.sub_pose = self.create_subscription(
-            PoseArray,
-            "/world/car_world/pose/info",
+            PoseStamped,
+            "/target_points",
             self.pose_callback,
             10
         )
         self.pub_pose = self.create_publisher(
-            PoseArray,
-            "/transformed_pose",
+            PoseStamped,
+            "/transformed_points",
             10
         )
 
-    def pose_callback(self, msg_in: PoseArray):
-        msg_pos_in = msg_in.poses[0]
-        msg_quat_in = msg_in.poses[1]
-        pos_g = (msg_pos_in.position.x, msg_pos_in.position.y, msg_pos_in.position.z)
-        quat_g = (msg_quat_in.orientation.x, msg_quat_in.orientation.y,
-                  msg_quat_in.orientation.z, msg_quat_in.orientation.w)
+    def pose_callback(self, msg_in: PoseStamped):
+        msg_in_pos = (msg_in.pose.position.x, msg_in.pose.position.y, msg_in.pose.position.z)
 
-        pos_r, quat_r = transform_pose_gazebo_to_ros2(pos_g, quat_g)
+        pos_r = transform_pose_gazebo_to_ros2(msg_in_pos)
 
-        msg_out = PoseArray()
-        msg_out.poses.append(Pose())
-        msg_out_pose = msg_out.poses[0]
-        msg_out_pose.position.x = pos_r[0]
-        msg_out_pose.position.y = pos_r[1]
-        msg_out_pose.position.z = pos_r[2]
-        msg_out_pose.orientation.x = quat_r[0]
-        msg_out_pose.orientation.y = quat_r[1]
-        msg_out_pose.orientation.z = quat_r[2]
-        msg_out_pose.orientation.w = quat_r[3]
+        msg_out = PoseStamped()
+        msg_out.pose.position.x = pos_r[0]
+        msg_out.pose.position.y = pos_r[1]
+        msg_out.pose.position.z = pos_r[2]
+    
+        print("Gazebo Pose:")
+        print("  Position G =", msg_in)
+        print("\nROS2 Pose:")
+        print("  Position R =", pos_r)
+
 
         self.pub_pose.publish(msg_out)
 
