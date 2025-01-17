@@ -51,3 +51,14 @@ if __name__ == "__main__":
     print("  Position G =", pos_g)
     print("\nROS2 Pose:")
     print("  Position R =", pos_r)
+
+    R_g_to_r = np.array([
+            [0, -1,  0],
+            [-1,  0,  0],
+            [0,   0, -1]
+        ])
+    
+    T = np.eye(4)
+    T[:3, :3] = R_g_to_r
+    q = quaternion_from_matrix(T)
+    print(q)

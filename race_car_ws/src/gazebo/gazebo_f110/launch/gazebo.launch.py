@@ -79,11 +79,23 @@ def generate_launch_description():
                    )
                ]
             )
+    static_transform_publisher = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='gazebo_static_transform',
+        output='screen',
+        arguments=[
+            '0', '0', '0',
+            '-0.7071067811865475', '0.7071067811865475', '0.0', '0.0',
+            'gazebo_frame', '0'
+        ]
+    )
     return LaunchDescription([
         gazebo_launch_group,
         m2p_node,
         world_pose_to_odom_node,
         #wasd_node,
+        static_transform_publisher,
         ackermann_to_twist_node,
         ros_gz_bridge_node,
         ])
