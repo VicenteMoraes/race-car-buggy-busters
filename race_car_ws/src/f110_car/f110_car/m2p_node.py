@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import math
 import rclpy
 from rclpy.node import Node
 import numpy as np
@@ -33,6 +34,9 @@ class M2P(Node):
         self.target_stack = [] # Stack to hold upcoming target points
         self.current_target = None # Current target point
         self.last_point = None # Last received point
+    
+    def normalize_angle(self, angle):
+        return math.remainder(angle, 2*math.pi)
 
     def point_callback(self, point_msg: PoseStamped):
         """
@@ -66,7 +70,7 @@ class M2P(Node):
         # Calculate distance and steering angle
         distance = np.linalg.norm(direction_vec)
         direction_rot = rot_from_vec(direction_vec)
-        steering_angle = direction_rot - orientation_rot
+        steering_angle = self.normalize_angle(direction_rot - orientation_rot)
 
         # Target switching
         if distance < 0.25:
