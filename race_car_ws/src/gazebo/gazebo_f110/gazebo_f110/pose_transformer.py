@@ -1,13 +1,14 @@
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import PoseArray, PoseStamped, PointStamped
-from gazebo_f110.transformer.transform_utils import transform_pose_gazebo_to_ros2
+from geometry_msgs.msg import PoseStamped, PointStamped
 import rclpy.time
 import tf2_ros
 import tf2_geometry_msgs
 from rclpy.duration import Duration
 
 class GazeboPoseTransformer(Node):
+    """This node should behaves as a translation node to transform target point from 
+        from Gazebo to ROS coordinate system."""
     def __init__(self):
         super().__init__("gazebo_pose_transformer")
         self.tf_buffer = tf2_ros.Buffer()
@@ -24,6 +25,7 @@ class GazeboPoseTransformer(Node):
             10
         )
     def pose_callback_transformer(self, msg_in: PoseStamped):
+        """Callback to transform target points and publish them on /transfromed_points"""
         print("Transformer launched")
         now = rclpy.time.Time()
         trans = self.tf_buffer.lookup_transform('0', 'gazebo_frame', now, timeout=Duration(seconds=1.0))
@@ -34,6 +36,7 @@ class GazeboPoseTransformer(Node):
         point_in.point.y = msg_in.pose.position.y
         point_in.point.z = msg_in.pose.position.z
         trasnformed_pose = tf2_geometry_msgs.do_transform_point(point_in, trans)
+
         print("Gazebo Pose:")
         print("  Position G =", point_in)
         print("\nROS2 Pose:")
@@ -41,31 +44,10 @@ class GazeboPoseTransformer(Node):
 
         transformed_pose_stamped = PoseStamped()
         transformed_pose_stamped.header = trasnformed_pose.header
-
         transformed_pose_stamped.pose.position.x = trasnformed_pose.point.x
         transformed_pose_stamped.pose.position.y = trasnformed_pose.point.y
         transformed_pose_stamped.pose.position.z = trasnformed_pose.point.z
         self.pub_pose.publish(transformed_pose_stamped)
-
-
-
-    def pose_callback(self, msg_in: PoseStamped):
-        msg_in_pos = (msg_in.pose.position.x, msg_in.pose.position.y, msg_in.pose.position.z)
-
-        pos_r = transform_pose_gazebo_to_ros2(msg_in_pos)
-
-        msg_out = PoseStamped()
-        msg_out.pose.position.x = pos_r[0]
-        msg_out.pose.position.y = pos_r[1]
-        msg_out.pose.position.z = pos_r[2]
-    
-        print("Gazebo Pose:")
-        print("  Position G =", msg_in)
-        print("\nROS2 Pose:")
-        print("  Position R =", pos_r)
-
-
-        self.pub_pose.publish(msg_out)
 
 def main(args=None):
     rclpy.init(args=args)
