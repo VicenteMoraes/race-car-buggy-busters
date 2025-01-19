@@ -5,7 +5,7 @@ on:
         paths:
             - 'docs/**'
             - 'mkdocs.yml'
-            - 'race_car_ws/src/test_package/**'
+            - 'race_car_ws/**'
             - '.github/workflows/mkdocs.yml'
     pull_request:
         branches:
@@ -13,7 +13,7 @@ on:
         paths:
             - 'docs/**'
             - 'mkdocs.yml'
-            - 'race_car_ws/src/test_package/**'
+            - 'race_car_ws/**'
             - '.github/workflows/mkdocs.yml'
     workflow_dispatch:
 
