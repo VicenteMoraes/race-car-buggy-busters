@@ -36,6 +36,9 @@ class M2P(Node):
         self.last_point = None # Last received point
     
     def normalize_angle(self, angle):
+        """
+        Normalize an angle to the range [-pi, pi].
+        """
         return math.remainder(angle, 2*math.pi)
 
     def point_callback(self, point_msg: PoseStamped):
