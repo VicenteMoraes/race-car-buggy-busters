@@ -20,7 +20,7 @@ class M2P(Node):
         super().__init__("AckermannToTwist") # "NodeName" will be displayed in rqt_graph
         self.odom_subscriber = self.create_subscription(Odometry, "/odom",
                                                          self.odom_callback, 10)
-        self.point_subscriber = self.create_subscription(PoseStamped, "/transformed_points",
+        self.point_subscriber = self.create_subscription(PoseStamped, "/target_points",
                                                          self.point_callback, 100)
         self.publisher = self.create_publisher(AckermannDriveStamped, "/drive", 10)
 

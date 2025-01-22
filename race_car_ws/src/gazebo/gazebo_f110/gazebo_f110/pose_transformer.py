@@ -24,13 +24,13 @@ class GazeboPoseTransformer(Node):
 
         self.sub_pose = self.create_subscription(
             PoseStamped,
-            "/target_points",
+            "/points_to_translate",
             self.pose_callback_transformer,
             10
         )
         self.pub_pose = self.create_publisher(
             PoseStamped,
-            "/transformed_points",
+            "/target_points",
             10
         )
 
@@ -56,7 +56,7 @@ class GazeboPoseTransformer(Node):
             now = rclpy.time.Time()
             trans = self.tf_buffer.lookup_transform(
                 '0',              # target_frame 
-                'gazebo_frame',   # source_frame
+                msg_in.header.frame_id,   # source_frame
                 now,
                 timeout=Duration(seconds=1.0)
             )
