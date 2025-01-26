@@ -46,7 +46,7 @@ class M2P(Node):
         Callback to handle new target points. Pushes received point to target stack.
         """
         new_point = np.array([point_msg.pose.position.x, point_msg.pose.position.y])
-        if self.target_stack and (np.array_equal(new_point, self.last_point)):
+        if (len(self.target_stack) > 0) and (np.array_equal(new_point, self.last_point)):
             return
         else:
             self.last_point = new_point
@@ -59,7 +59,7 @@ class M2P(Node):
         """
 
         # Handle target & target stack
-        if self.current_target is None and self.target_stack:
+        if self.current_target is None and (len(self.target_stack) > 0):
             self.current_target = self.target_stack.pop(0)
 
         if self.current_target is None:
@@ -77,12 +77,13 @@ class M2P(Node):
 
         # Target switching
         if distance < 0.25:
-            if self.target_stack:
+            if len(self.target_stack) < 0:
                 self.get_logger().info("Switching to next target point.")
                 self.current_target = self.target_stack.pop(0)
                 return
             else:
                 distance = 0.0 # Stop the car
+                self.current_target = None
 
         t = self.get_clock().now()
         msg = AckermannDriveStamped()
