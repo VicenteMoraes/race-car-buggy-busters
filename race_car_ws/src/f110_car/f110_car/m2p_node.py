@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from rcply.parameter import Parameter
+from rclpy.parameter import Parameter
 from rcl_interfaces.msg import SetParametersResult
 
 import numpy as np
@@ -37,6 +37,8 @@ class M2P(Node):
         self.max_speed = self.get_parameter('max_speed').value  # m/s
         self.max_acceleration = self.get_parameter('max_acceleration').value  # m/s²
         self.max_steering = self.get_parameter('max_steering').value # radians/s
+        
+        self.add_on_set_parameters_callback(self.param_callback)
 
         self.target_stack = [] # Stack to hold upcoming target points
         self.current_target = None # Current target point
