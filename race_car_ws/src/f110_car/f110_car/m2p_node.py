@@ -47,6 +47,7 @@ class M2P(Node):
         """
         new_point = np.array([point_msg.pose.position.x, point_msg.pose.position.y])
         if self.target_stack and (np.array_equal(new_point, self.last_point)):
+            self.get_logger().info(f"Received duplicate target")
             return
         else:
             self.last_point = new_point
@@ -61,6 +62,7 @@ class M2P(Node):
         # Handle target & target stack
         if self.current_target is None and self.target_stack:
             self.current_target = self.target_stack.pop(0)
+            self.get_logger().info(f"Changing to new point (drive restart)")
 
         if self.current_target is None:
             return
@@ -82,7 +84,9 @@ class M2P(Node):
                 self.current_target = self.target_stack.pop(0)
                 return
             else:
+                self.get_logger().info(f"No new points. Interrupting drive.")
                 distance = 0.0 # Stop the car
+                self.current_target = None
 
         t = self.get_clock().now()
         msg = AckermannDriveStamped()
