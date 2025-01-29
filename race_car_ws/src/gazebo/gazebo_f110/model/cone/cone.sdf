@@ -6,10 +6,15 @@
         <visual name='visual'>
           <geometry>
            <mesh>
-              <uri>cone_mesh.dae</uri>
+              <uri>model://cone/meshes/cone_mesh.dae</uri>
               <scale>0.25 0.25 0.25</scale>
            </mesh>
           </geometry>
+          <material>
+            <ambient>0 0 1 1</ambient>
+            <diffuse>0 0 1 1</diffuse>
+            <specular>0 0 1 1</specular>
+          </material>
         </visual>
         <collision name='visual'>
           <geometry>

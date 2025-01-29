@@ -1,11 +1,11 @@
 <?xml version="1.0" ?>
 <sdf version="1.9">
-    <model name="f110_car" canonical_link="chassis">
-        <frame name="lidar_frame" attached_to='chassis'>
+    <model name="f110_car" canonical_link="base_link">
+        <frame name="lidar_frame" attached_to='base_link'>
             <pose>0.8 0 0.5 0 0 0</pose>
         </frame>
 
-        <link name='chassis'>
+        <link name='base_link'>
             <pose>-0.27 0.085 0.05 0 0 0</pose>
             <inertial>
                 <mass>1.14395</mass>
@@ -46,7 +46,7 @@
         </link>
 
         <link name='front_left_wheel'>
-            <pose relative_to="chassis">0.11 0.15 -0.05 -1.5707 0 0</pose>
+            <pose relative_to="base_link">0.11 0.15 -0.05 -1.5707 0 0</pose>
             <inertial>
                 <mass>2</mass>
                 <inertia>
@@ -96,7 +96,7 @@
         </link>
 
         <link name='rear_left_wheel'>
-            <pose relative_to="chassis">-0.11 0.15 -0.05 -1.5707 0 0</pose>
+            <pose relative_to="base_link">-0.11 0.15 -0.05 -1.5707 0 0</pose>
             <inertial>
                 <mass>2</mass>
                 <inertia>
@@ -146,7 +146,7 @@
         </link>
 
         <link name='front_right_wheel'>
-            <pose relative_to="chassis">0.11 -0.15 -0.05 -1.5707 0 0</pose>
+            <pose relative_to="base_link">0.11 -0.15 -0.05 -1.5707 0 0</pose>
             <inertial>
                 <mass>2</mass>
                 <inertia>
@@ -196,7 +196,7 @@
         </link>
 
         <link name='rear_right_wheel'>
-            <pose relative_to="chassis">-0.11 -0.15 -0.05 -1.5707 0 0</pose>
+            <pose relative_to="base_link">-0.11 -0.15 -0.05 -1.5707 0 0</pose>
             <inertial>
                 <mass>2</mass>
                 <inertia>
@@ -297,7 +297,7 @@
 
         <joint name="front_left_wheel_steering_joint" type="revolute">
             <child>front_left_wheel_steering_link</child>
-            <parent>chassis</parent>
+            <parent>base_link</parent>
             <axis>
                 <xyz>0 0 1</xyz>
                 <limit>
@@ -311,7 +311,7 @@
         </joint>
 
         <joint name="front_right_wheel_steering_joint" type="revolute">
-            <parent>chassis</parent>
+            <parent>base_link</parent>
             <child>front_right_wheel_steering_link</child>
             <axis>
                 <xyz>0 0 1</xyz>
@@ -349,7 +349,7 @@
         </joint>
 
         <joint name='rear_left_wheel_joint' type='revolute'>
-            <parent>chassis</parent>
+            <parent>base_link</parent>
             <child>rear_left_wheel</child>
             <axis>
                 <xyz>0 0 1</xyz>
@@ -361,7 +361,7 @@
         </joint>
 
         <joint name='rear_right_wheel_joint' type='revolute'>
-            <parent>chassis</parent>
+            <parent>base_link</parent>
             <child>rear_right_wheel</child>
             <axis>
                 <xyz>0 0 1</xyz>
@@ -372,74 +372,107 @@
             </axis>
         </joint>
         <!-- SENSORS -->
-        <link name="camera_link">
-            <pose relative_to="lidar_link">0 0 0.05 0 0 0</pose>
+        <link name="realsense_link">
+            <pose relative_to="lidar_link">0 0 0.1 0 0 1.5708</pose>
             <inertial>
-                <mass>0.1</mass>
+                <mass>0.0615752</mass>
                 <inertia>
-                    <ixx>0.000166667</ixx>
-                    <iyy>0.000166667</iyy>
-                    <izz>0.000166667</izz>
+                <ixx>9.108e-05</ixx>
+                <ixy>0</ixy>
+                <ixz>0</ixz>
+                <iyy>2.51e-06</iyy>
+                <iyz>0</iyz>
+                <izz>8.931e-05</izz>
                 </inertia>
             </inertial>
             <collision name="collision">
                 <geometry>
-                    <box>
-                        <size>0.05 0.05 0.05</size>
-                    </box>
+                <mesh>
+                    <uri>model://car/meshes/realsense.dae</uri>
+                </mesh>
                 </geometry>
             </collision>
-            <visual name="visual">
-                <material>
-                    <ambient>0.5 0 0 1</ambient>
-                    <diffuse>0.5 0 0 1</diffuse>
-                </material>
+            <visual name= "visual">
                 <geometry>
-                    <box>
-                        <size>0.05 0.05 0.05</size>
-                    </box>
+                <mesh>
+                    <uri>model://car/meshes/realsense.dae</uri>
+                    <submesh>
+                    <name>RealSense</name>
+                    <center>false</center>
+                    </submesh>
+                </mesh>
                 </geometry>
+                <material>
+                <diffuse>1.0 1.0 1.0</diffuse>
+                <specular>1.0 1.0 1.0</specular>
+                <pbr>
+                    <metal>
+                    <albedo_map>model://car/materials/textures/RealSense_Albedo.png</albedo_map>
+                    <normal_map>model://car/materials/textures/RealSense_Normal.png</normal_map>
+                    <metalness_map>model://car/materials/textures/RealSense_Metalness.png</metalness_map>
+                    <roughness_map>model://car/materials/textures/RealSense_Roughness.png</roughness_map>
+                    </metal>
+                </pbr>
+                <script>
+                    <uri>model://car/materials/scripts/</uri>
+                    <uri>model://car/materials/textures/</uri>
+                    <name>UrbanTile/RealSense_Diffuse</name>
+                </script>
+                </material>
             </visual>
 
-            <sensor name="camera" type="camera">
-                <camera>
-                    <horizontal_fov>1.204277</horizontal_fov>
-                    <vertical_fov>0.7330383</vertical_fov>
-                    <image>
-                        <width>1280</width>
-                        <height>720</height>
-                    </image>
-                    <clip>
-                        <near>0.1</near>
-                        <far>100</far>
-                    </clip>
-                </camera>
-                <always_on>1</always_on>
-                <update_rate>5</update_rate>
-                <visualize>true</visualize>
-                <topic>camera</topic>
-            </sensor>
-        <sensor name="depth_camera1" type="depth_camera">
-          <update_rate>5</update_rate>
-          <topic>depth_camera</topic>
-              <camera>
-                <horizontal_fov>1.518436</horizontal_fov>
-                <vertical_fov>1.012291</vertical_fov>
+            <sensor name="realsense_d435" type="rgbd_camera">
+                <pose>0 0 0 0 0 -1.5708</pose>
+                <topic>rgbd_camera</topic>
+                <update_rate>60</update_rate>
+                <camera name="camera">
+                <horizontal_fov>1.0472</horizontal_fov>
+                <lens>
+                    <intrinsics>
+                    <!-- fx = fy = width / ( 2 * tan (hfov / 2 ) ) -->
+                    <fx>554.25469</fx>
+                    <fy>554.25469</fy>
+                    <!-- cx = ( width + 1 ) / 2 -->
+                    <cx>320.5</cx>
+                    <!-- cy = ( height + 1 ) / 2 -->
+                    <cy>240.5</cy>
+                    <s>0</s>
+                    </intrinsics>
+                </lens>
+                <distortion>
+                    <k1>0.0</k1>
+                    <k2>0.0</k2>
+                    <k3>0.0</k3>
+                    <p1>0.0</p1>
+                    <p2>0.0</p2>
+                    <center>0.5 0.5</center>
+                </distortion>
                 <image>
-                  <width>1280</width>
-                  <height>720</height>
-                  <format>R_FLOAT32</format>
+                    <width>640</width>
+                    <height>480</height>
+                    <format>R8G8B8</format>
                 </image>
                 <clip>
-                  <near>0.28</near>
-                  <far>10.0</far>
+                    <near>0.01</near>
+                    <far>300</far>
                 </clip>
-              </camera>
-          </sensor>
+                <depth_camera>
+                    <clip>
+                    <near>0.1</near>
+                    <far>10</far>
+                    </clip>
+                </depth_camera>
+                <noise>
+                    <type>gaussian</type>
+                    <mean>0</mean>
+                    <stddev>0.007</stddev>
+                </noise>
+                </camera>
+            </sensor>
         </link>
 
         <link name="lidar_link">
-            <pose relative_to="chassis">0.12 0 0.055 0 0 0</pose>
+            <pose relative_to="base_link">0.12 0 0.055 0 0 0</pose>
             <inertial>
                 <mass>0.1</mass>
                 <inertia>
@@ -462,9 +495,9 @@
                     </box>
                 </geometry>
             </visual>
-            <sensor name='gpu_lidar' type='gpu_lidar'>"
+            <sensor name='gpu_lidar' type='gpu_lidar'>
             <topic>scan</topic>
-            <update_rate>30</update_rate>
+            <update_rate>40</update_rate>
             <lidar>
                 <scan>
                     <horizontal>
@@ -492,11 +525,11 @@
     </link>
 
     <joint name="camera_joint" type="fixed">
-        <parent>chassis</parent>
-        <child>camera_link</child>
+      <parent>base_link</parent>
+      <child>realsense_link</child>
     </joint>
     <joint name="lidar_joint" type="fixed">
-        <parent>chassis</parent>
+        <parent>base_link</parent>
         <child>lidar_link</child>
     </joint>
 
@@ -510,15 +543,23 @@
         <right_joint>rear_right_wheel_joint</right_joint>
         <left_steering_joint>front_left_wheel_steering_joint</left_steering_joint>
         <right_steering_joint>front_right_wheel_steering_joint</right_steering_joint>
-        <kingpin_width>.2</kingpin_width>
-        <steering_limit>0.5</steering_limit>
-        <wheel_base>0.3</wheel_base>
-        <wheel_separation>.22</wheel_separation>
-        <wheel_radius>0.055</wheel_radius>
-        <min_velocity>-0.5</min_velocity>
-        <max_velocity>0.5</max_velocity>
-        <min_acceleration>-0.25</min_acceleration>
-        <max_acceleration>0.25</max_acceleration>
+        <kingpin_width>1.0</kingpin_width>
+        <!--steering_limit>0.5</steering_limit-->
+        <wheel_base>1.0</wheel_base>
+        <wheel_separation>1.25</wheel_separation>
+        <wheel_radius>0.3</wheel_radius>
+        <!--min_velocity>-1</min_velocity-->
+        <!--max_velocity>1</max_velocity-->
+        <min_acceleration>-3</min_acceleration>
+        <max_acceleration>3</max_acceleration>
+    </plugin>
+    <plugin
+        filename="libignition-gazebo-odometry-publisher-system"
+        name="ignition::gazebo::systems::OdometryPublisher">
+        <odom_topic>/model/f110_car/odometry</odom_topic>
+        <odom_frame>odom</odom_frame>
+        <robot_base_frame>base_link</robot_base_frame>
+        <tf_topic>/model/f110_car/pose</tf_topic>
     </plugin>
 </model>
 </sdf>
