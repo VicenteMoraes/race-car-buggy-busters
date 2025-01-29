@@ -13,7 +13,7 @@ from avai_lab.gazebo.service import remove_entity, spawn_entities
 from avai_lab.gazebo.msg import Entity, EntityFactory, EntityFactory_V, EntityType, Pose, Vector3d
 from avai_lab.track_gen import generate_track
 
-WORLD = "empty"
+WORLD = "car_world"
 cone_model = Path(os.environ.get("IGN_GAZEBO_RESOURCE_PATH", "")) / "cone.sdf"
 assert cone_model.exists(), "Cone model does not exist"
 
