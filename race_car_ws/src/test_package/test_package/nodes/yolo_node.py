@@ -23,9 +23,9 @@ class YoloConeDetectionNode(Node):
     def __init__(self):
         super().__init__('yolo_cone_detection_node')
 
-        self.declare_parameter('image_topic', '/rgbd_camera/image')
-        self.declare_parameter('camera_info_topic', '/rgbd_camera/camera_info')
-        self.declare_parameter('depth_topic', '/rgbd_camera/depth_image')
+        self.declare_parameter('image_topic', '/camera/realsense2_camera/color/image_raw')
+        self.declare_parameter('camera_info_topic', '/camera/realsense2_camera/color/camera_info')
+        self.declare_parameter('depth_topic', '/camera/realsense2_camera/depth/image_rect_raw')
         self.declare_parameter('detection_topic', '/yolo_cones')
         self.declare_parameter('model_path', '/home/myuser/Desktop/race-car-buggy-busters/race_car_ws/src/test_package/runs/detect/train/weights/best.pt') 
         self.declare_parameter('confidence_threshold', 0.25) # Confidence threshold for filtering yolo detections
@@ -139,9 +139,9 @@ class YoloConeDetectionNode(Node):
             ps = PointStamped()
             ps.header.frame_id = camera_frame
             ps.header.stamp = msg.header.stamp
-            ps.point.x = ps_x
-            ps.point.y = ps_y
-            ps.point.z = ps_z
+            ps.point.x = float(ps_x)
+            ps.point.y = float(ps_y)
+            ps.point.z = float(ps_z)
             
             try:
                 ps_transformed = tf2_geometry_msgs.do_transform_point(ps, transform_stamped)

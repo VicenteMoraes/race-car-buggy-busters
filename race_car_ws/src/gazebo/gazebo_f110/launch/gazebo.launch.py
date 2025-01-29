@@ -140,7 +140,7 @@ def generate_launch_description():
         package='tf2_ros',
         executable='static_transform_publisher',
         name='static_tf_base_link_realsense_link',
-        arguments=['0', '0', '0.1', '0', '0', '0', 'f110_car/lidar_link', 'f110_car/realsense_link'],
+        arguments=['0', '0', '0.1', '1.57079', '0', '-1.57079', 'f110_car/lidar_link', 'f110_car/realsense_link'],
         parameters=[{'use_sim_time': True}],
     )
     static_tf_realsense_link_realsense_d435 = Node(
