@@ -11,7 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from avai_lab.track_gen import generate_track, resample_polygon
-from avai_lab.gazebo.msgs import EntityFactory, EntityFactory_V, Pose, Vector3d, WorldControl
+from avai_lab.gazebo.msg import EntityFactory, EntityFactory_V, Pose, Vector3d, WorldControl
 from avai_lab.gazebo.service import set_pose, spawn_entities, world_control
 
 import rclpy
@@ -19,7 +19,7 @@ from rclpy.node import Node
 from geometry_msgs.msg import PoseStamped
 
 WORLD = "car_world"
-CAR_ID = 4
+CAR_ID = 4 # important to set the car position
 cone_model = Path(os.environ.get("IGN_GAZEBO_RESOURCE_PATH", "")) / "cone.sdf"
 assert cone_model.exists(), "Cone model does not exist"
 
@@ -54,7 +54,8 @@ def main():
         cones.append(entity_factory)
     entity_factory_v = EntityFactory_V(data=cones)
     spawn_entities(WORLD, entity_factory_v)
-    #set_pose(WORLD, Pose(id=4, position=Vector3d(x=x, y=y, z=0.25)))
+    start_point = middle_track[left_most_point]
+    set_pose(WORLD, Pose(id=4, position=Vector3d(x=start_point[0], y=start_point[1], z=0.25)))
     sleep(5)
     rclpy.init()
     node = TrackPlanner(np.concatenate((middle_track[left_most_point + 1:], middle_track[:left_most_point])))
