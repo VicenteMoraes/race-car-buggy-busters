@@ -79,6 +79,7 @@ class M2P(Node):
 
         # Target switching
         if distance < 0.25:
+            self.get_logger().info("Arrived at point area.")
             if self.target_stack:
                 self.get_logger().info("Switching to next target point.")
                 self.current_target = self.target_stack.pop(0)
