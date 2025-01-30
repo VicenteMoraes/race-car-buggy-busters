@@ -62,13 +62,19 @@ jobs:
                 name: mkdocs-site-pr-${{ github.event.pull_request.number || 'main' }}
                 path: site/
 
-    always_succeed:
-        needs: check_changes
+    check_build_or_succeed:
+        needs: [check_changes, build]
         runs-on: ubuntu-latest
-        if: needs.check_changes.outputs.docs_changed == 'false'
         steps:
-          - name: Report Success
-            run: echo "Building docs not needed for changes. Reporting success."
+          - name: Check if build succeded or did not need to be triggered
+            id: check_success
+            run: |
+              if [[ "${{ needs.build.result }}" == "success" || "${{ needs.check_changes.outputs.docs_changed }}" == "false" ]]; then
+                echo "status=success" >> $GITHUB_OUTPUT
+              else
+                echo "status=failure" >> $GITHUB_OUTPUT
+              fi
+      
 
     deploy:
         if: github.ref == 'refs/heads/main' && needs.check_changes.outputs.docs_changed == 'true'
