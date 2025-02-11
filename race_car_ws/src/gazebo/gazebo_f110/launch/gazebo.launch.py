@@ -12,37 +12,60 @@ def generate_launch_description():
     pkg_ros_gz_sim = get_package_share_directory('ros_gz_sim')
     gz_launch_path = PathJoinSubstitution([pkg_ros_gz_sim, 'launch', 'gz_sim.launch.py'])
     pkg_gazebo_f110 = get_package_share_directory('gazebo_f110')
+    slam_toolbox_config = PathJoinSubstitution([pkg_gazebo_f110, "mapper_params_online_async.yaml"])
     
     wasd_node = Node(
             package="test_package",
             namespace="f110",
             executable="wasd_control_node",
-            name="wasd_control"
+            name="wasd_control",
+            parameters=[{'use_sim_time': True}],
             )
     m2p_node = Node(
             package="f110_car",
             namespace="f110",
             executable="move_to_point",
-            name="move_to_point"
+            name="move_to_point",
+            parameters=[{'use_sim_time': True}],
             )
     ackermann_to_twist_node = Node(
             package="gazebo_f110",
             namespace="gazebo",
             executable="ackermann_to_twist",
-            name="ackermann_to_twist"
+            name="ackermann_to_twist",
+            parameters=[{'use_sim_time': True}],
             )
     world_pose_to_odom_node = Node(
             package="gazebo_f110",
             namespace="gazebo",
             executable="world_pose_to_odom",
-            name="world_pose_to_odom"
+            name="world_pose_to_odom",
+            parameters=[{'use_sim_time': True}],
             )
     transform_node = Node(
         package="gazebo_f110",
         namespace="gazebo",
         executable="transform_pose",
-        name="transform_pose"
+        name="transform_pose",
+        parameters=[{'use_sim_time': True}],
     )
+    rviz = Node(
+            package="rviz2",
+            namespace="rviz2",
+            executable="rviz2",
+            name="rviz2",
+            arguments=["-d", PathJoinSubstitution([pkg_gazebo_f110, "rviz_config.rviz"])],
+            parameters=[{'use_sim_time': True}],
+            )
+    slam_launch = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(PathJoinSubstitution([get_package_share_directory("slam_toolbox"),
+                                                                "launch", "online_async_launch.py"])),
+            launch_arguments={
+                "slam_params_file": slam_toolbox_config,
+                "use_sim_time": "true"
+                }.items()
+            )
+
     ros_gz_bridge_node = Node(
             package='ros_gz_bridge',
             executable='parameter_bridge',
@@ -62,7 +85,8 @@ def generate_launch_description():
                 ("/depth_camera", "/camera/realsense2_camera/depth/image_rect_raw"),
                 #("/model/f110_car/odometry", "/odom"),
                 ],
-            output='screen'
+            output='screen',
+            parameters=[{'use_sim_time': True}],
             )
 
     gazebo_launch_group = GroupAction(
@@ -80,29 +104,50 @@ def generate_launch_description():
                    PythonLaunchDescriptionSource(gz_launch_path),
                    launch_arguments={
                        'ign_args': [PathJoinSubstitution([pkg_gazebo_f110, "world", LaunchConfiguration('world_file')])],
-                       'on_exit_shutdown': 'True'
+                       'on_exit_shutdown': 'True',
+                       'use_sim_time': 'True'
                        }.items(),
                    )
                ]
             )
-    static_transform_publisher = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='gazebo_static_transform',
-        output='screen',
-        arguments=[
-            '0', '0', '0',
-            '-0.7071067811865475', '0.7071067811865475', '0.0', '0.0',
-            'gazebo_frame', '0'
-        ]
-    )
+    transforms = GroupAction(
+            actions = [
+                Node(
+                    package='tf2_ros',
+                    executable='static_transform_publisher',
+                    name='gpu_lidar_tf',
+                    output='screen',
+                    arguments=[
+                        '0', '0', '0', '0.0', '0.0', '0.0',
+                        'lidar_link', 'gpu_lidar'
+                        ],
+                    parameters=[{'use_sim_time': True}],
+                    ),
+                Node(
+                    package='tf2_ros',
+                    executable='static_transform_publisher',
+                    name='map_scan_tf',
+                    output='screen',
+                    arguments=[
+                        '0', '0', '0', '0.0', '0.0', '0.0',
+                        'map', 'scan'
+                       ],
+                    parameters=[{'use_sim_time': True}],
+                    ),
+                ])
     return LaunchDescription([
         gazebo_launch_group,
-        m2p_node,
+        #m2p_node,
         world_pose_to_odom_node,
-        #wasd_node,
-        static_transform_publisher,
+        wasd_node,
+        transforms,
         transform_node,
         ackermann_to_twist_node,
         ros_gz_bridge_node,
+        slam_launch,
+        Node(package='robot_state_publisher', executable='robot_state_publisher',
+             name='robot_state_publisher',
+             output='screen',
+             arguments=[PathJoinSubstitution([pkg_gazebo_f110, "model", "f110_car.sdf"])]),
+        rviz
         ])

@@ -17,6 +17,8 @@ setup(
         (os.path.join('share', package_name, "model/"), glob('model/*.sdf')),
         (os.path.join('share', package_name, "model/"), glob('model/*.dae')),
         (os.path.join('share', package_name, "model/"), glob('model/*.config')),
+        (os.path.join('share', package_name, "model/"), glob('*.yaml')),
+        (os.path.join('share', package_name, "model/"), glob('*.rviz')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,

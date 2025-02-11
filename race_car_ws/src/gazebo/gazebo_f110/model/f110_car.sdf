@@ -1,11 +1,8 @@
 <?xml version="1.0" ?>
 <sdf version="1.9">
-    <model name="f110_car" canonical_link="chassis">
-        <frame name="lidar_frame" attached_to='chassis'>
-            <pose>0.8 0 0.5 0 0 0</pose>
-        </frame>
+    <model name="f110_car" canonical_link="base_link">
 
-        <link name='chassis'>
+        <link name='base_link'>
             <pose>-0.27 0.085 0.05 0 0 0</pose>
             <inertial>
                 <mass>1.14395</mass>
@@ -46,7 +43,7 @@
         </link>
 
         <link name='front_left_wheel'>
-            <pose relative_to="chassis">0.11 0.15 -0.05 -1.5707 0 0</pose>
+            <pose relative_to="base_link">0.11 0.15 -0.05 -1.5707 0 0</pose>
             <inertial>
                 <mass>2</mass>
                 <inertia>
@@ -96,7 +93,7 @@
         </link>
 
         <link name='rear_left_wheel'>
-            <pose relative_to="chassis">-0.11 0.15 -0.05 -1.5707 0 0</pose>
+            <pose relative_to="base_link">-0.11 0.15 -0.05 -1.5707 0 0</pose>
             <inertial>
                 <mass>2</mass>
                 <inertia>
@@ -146,7 +143,7 @@
         </link>
 
         <link name='front_right_wheel'>
-            <pose relative_to="chassis">0.11 -0.15 -0.05 -1.5707 0 0</pose>
+            <pose relative_to="base_link">0.11 -0.15 -0.05 -1.5707 0 0</pose>
             <inertial>
                 <mass>2</mass>
                 <inertia>
@@ -196,7 +193,7 @@
         </link>
 
         <link name='rear_right_wheel'>
-            <pose relative_to="chassis">-0.11 -0.15 -0.05 -1.5707 0 0</pose>
+            <pose relative_to="base_link">-0.11 -0.15 -0.05 -1.5707 0 0</pose>
             <inertial>
                 <mass>2</mass>
                 <inertia>
@@ -297,7 +294,7 @@
 
         <joint name="front_left_wheel_steering_joint" type="revolute">
             <child>front_left_wheel_steering_link</child>
-            <parent>chassis</parent>
+            <parent>base_link</parent>
             <axis>
                 <xyz>0 0 1</xyz>
                 <limit>
@@ -311,7 +308,7 @@
         </joint>
 
         <joint name="front_right_wheel_steering_joint" type="revolute">
-            <parent>chassis</parent>
+            <parent>base_link</parent>
             <child>front_right_wheel_steering_link</child>
             <axis>
                 <xyz>0 0 1</xyz>
@@ -349,7 +346,7 @@
         </joint>
 
         <joint name='rear_left_wheel_joint' type='revolute'>
-            <parent>chassis</parent>
+            <parent>base_link</parent>
             <child>rear_left_wheel</child>
             <axis>
                 <xyz>0 0 1</xyz>
@@ -361,7 +358,7 @@
         </joint>
 
         <joint name='rear_right_wheel_joint' type='revolute'>
-            <parent>chassis</parent>
+            <parent>base_link</parent>
             <child>rear_right_wheel</child>
             <axis>
                 <xyz>0 0 1</xyz>
@@ -439,7 +436,7 @@
         </link>
 
         <link name="lidar_link">
-            <pose relative_to="chassis">0.12 0 0.055 0 0 0</pose>
+            <pose relative_to="base_link">0.12 0 0.055 0 0 0</pose>
             <inertial>
                 <mass>0.1</mass>
                 <inertia>
@@ -492,11 +489,11 @@
     </link>
 
     <joint name="camera_joint" type="fixed">
-        <parent>chassis</parent>
+        <parent>base_link</parent>
         <child>camera_link</child>
     </joint>
     <joint name="lidar_joint" type="fixed">
-        <parent>chassis</parent>
+        <parent>base_link</parent>
         <child>lidar_link</child>
     </joint>
 
