@@ -13,7 +13,9 @@ dependencies = [
     "numpy",
     "pydantic",
     "tomlkit",
-    "pynput"
+    "pynput",
+    "shapely",
+    "scipy"
 ]
 
 [project.optional-dependencies]

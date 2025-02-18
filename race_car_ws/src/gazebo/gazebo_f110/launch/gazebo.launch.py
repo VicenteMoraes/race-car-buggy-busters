@@ -37,6 +37,12 @@ def generate_launch_description():
             executable="world_pose_to_odom",
             name="world_pose_to_odom"
             )
+    transform_node = Node(
+        package="gazebo_f110",
+        namespace="gazebo",
+        executable="transform_pose",
+        name="transform_pose"
+    )
     ros_gz_bridge_node = Node(
             package='ros_gz_bridge',
             executable='parameter_bridge',
@@ -79,11 +85,24 @@ def generate_launch_description():
                    )
                ]
             )
+    static_transform_publisher = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='gazebo_static_transform',
+        output='screen',
+        arguments=[
+            '0', '0', '0',
+            '-0.7071067811865475', '0.7071067811865475', '0.0', '0.0',
+            'gazebo_frame', '0'
+        ]
+    )
     return LaunchDescription([
         gazebo_launch_group,
         m2p_node,
         world_pose_to_odom_node,
         #wasd_node,
+        static_transform_publisher,
+        transform_node,
         ackermann_to_twist_node,
         ros_gz_bridge_node,
         ])

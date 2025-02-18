@@ -26,7 +26,7 @@ class M2P(Node):
         self.point_subscriber = self.create_subscription(PoseStamped, "/target_points",
                                                          self.point_callback, 100)
         self.publisher = self.create_publisher(AckermannDriveStamped, "/drive", 10)
-
+        
         self.declare_parameter('max_steering_angle', 0.5) # radians
         self.declare_parameter('max_speed', 0.5) # m/s
         self.declare_parameter('min_speed', 0.25) # m/s
@@ -76,11 +76,12 @@ class M2P(Node):
         """
         new_point = np.array([point_msg.pose.position.x, point_msg.pose.position.y])
         if self.target_stack and (np.array_equal(new_point, self.last_point)):
+            self.get_logger().info(f"Received duplicate target")
             return
         else:
             self.last_point = new_point
             self.target_stack.append(new_point)
-            self.get_logger().info(f"Received new target point: {self.last_point[0]}")
+            self.get_logger().info(f"Received new target point: {self.last_point}")
 
     def odom_callback(self, odom_msg: Odometry):
         """
@@ -90,6 +91,7 @@ class M2P(Node):
         # Handle target & target stack
         if self.current_target is None and self.target_stack:
             self.current_target = self.target_stack.pop(0)
+            self.get_logger().info("Changing to new point (drive restart)")
 
         if self.current_target is None:
             return
@@ -106,12 +108,16 @@ class M2P(Node):
 
         # Target switching
         if distance < 0.25:
+            self.get_logger().info("Arrived at point area.")
             if self.target_stack:
                 self.get_logger().info("Switching to next target point.")
                 self.current_target = self.target_stack.pop(0)
                 return
             else:
+                self.get_logger().info("No new points. Interrupting drive.")
                 distance = 0.0 # Stop the car
+                self.current_target = None
+                return
 
         t = self.get_clock().now()
         msg = AckermannDriveStamped()
@@ -120,7 +126,7 @@ class M2P(Node):
         msg.header.frame_id = "0"
         msg.drive.steering_angle = np.clip(steering_angle, -self.max_steering_angle, self.max_steering_angle)
         msg.drive.steering_angle_velocity = self.max_steering
-        msg.drive.speed = min(float(distance), float(self.max_speed)) # Set the speed to the distance from the point (when we steer we should reduce that)
+        msg.drive.speed = max(float(self.min_speed), min(float(distance), float(self.max_speed))) # Set the speed to the distance from the point (when we steer we should reduce that)
         msg.drive.jerk = self.max_acceleration
         msg.drive.acceleration = self.max_acceleration
         #msg.jerk = self.max_steering
