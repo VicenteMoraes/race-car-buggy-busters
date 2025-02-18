@@ -33,7 +33,7 @@ def generate_launch_description():
             PythonLaunchDescriptionSource(PathJoinSubstitution([get_package_share_directory("slam_toolbox"),
                                                                 "launch", "online_async_launch.py"])),
             launch_arguments={
-                "use_stim_time": 'true',
+                "use_sim_time": 'true',
                 "slam_params_file": slam_toolbox_config,
                 }.items()
 
@@ -43,7 +43,7 @@ def generate_launch_description():
             namespace="rviz2",
             executable="rviz2",
             name="rviz2",
-            parameters=[{"use_stim_time": True}],
+            parameters=[{"use_sim_time": True}],
             arguments=["-d", PathJoinSubstitution([f110_car_pkg_share, "rviz_config.rviz"])],
             )
     transforms = GroupAction(
