@@ -29,6 +29,7 @@ class M2P(Node):
 
         self.declare_parameter('max_steering_angle', 0.5) # radians
         self.declare_parameter('max_speed', 0.5) # m/s
+        self.declare_parameter('min_speed', 0.25) # m/s
         self.declare_parameter('max_acceleration', 0.25) # m/s²
         self.declare_parameter('max_steering', 0.5) # radians/s
 
@@ -36,6 +37,7 @@ class M2P(Node):
         # self.get_logger().info(f"Used config:\n{str(self.config)}")
         self.max_steering_angle = self.get_parameter('max_steering_angle').value # radians
         self.max_speed = self.get_parameter('max_speed').value  # m/s
+        self.min_speed = self.get_parameter('min_speed').value # m/s
         self.max_acceleration = self.get_parameter('max_acceleration').value  # m/s²
         self.max_steering = self.get_parameter('max_steering').value # radians/s
         
@@ -60,6 +62,8 @@ class M2P(Node):
                 self.max_steering_angle = param.value
             elif param.name == 'max_speed':
                 self.max_speed = param.value
+            elif param.name == 'min_speed':
+                self.min_speed = param.value
             elif param.name == 'max_acceleration':
                 self.max_acceleration = param.value
             elif param.name == 'max_steering':
