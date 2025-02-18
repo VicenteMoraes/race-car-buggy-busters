@@ -72,9 +72,9 @@ def generate_launch_description():
                     ),
                 ])
     return LaunchDescription([
-        m2p_node,
-        transforms,
-        transform_node,
+        #m2p_node,
+        #transforms,
+        #transform_node,
         slam_launch,
         rviz
     ])

@@ -17,8 +17,8 @@ setup(
         (os.path.join('share', package_name, "model/"), glob('model/*.sdf')),
         (os.path.join('share', package_name, "model/"), glob('model/*.dae')),
         (os.path.join('share', package_name, "model/"), glob('model/*.config')),
-        (os.path.join('share', package_name, "model/"), glob('*.yaml')),
-        (os.path.join('share', package_name, "model/"), glob('*.rviz')),
+        (os.path.join('share', package_name), glob('*.yaml')),
+        (os.path.join('share', package_name), glob('*.rviz')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -26,7 +26,8 @@ setup(
         'console_scripts': [
             "ackermann_to_twist = gazebo_f110.ackermann_to_twist:main",
             "transform_pose = gazebo_f110.pose_transformer:main",
-            "world_pose_to_odom = gazebo_f110.world_pose_to_odom:main"
+            "world_pose_to_odom = gazebo_f110.world_pose_to_odom:main",
+            'odom_tf_node = gazebo_f110.odom_tf_node:main',
         ],
     },
 )

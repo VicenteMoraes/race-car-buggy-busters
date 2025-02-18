@@ -76,14 +76,16 @@ def generate_launch_description():
                 "/camera@sensor_msgs/msg/Image@ignition.msgs.Image",
                 "/imu@sensor_msgs/msg/Imu@ignition.msgs.IMU",
                 "/depth_camera@sensor_msgs/msg/Image@ignition.msgs.Image",
-                #"/model/f110_car/odometry@nav_msgs/msg/Odometry@ignition.msgs.Odometry",
+                "/model/base_link/odometry@nav_msgs/msg/Odometry@ignition.msgs.Odometry",
                 "/world/car_world/pose/info@geometry_msgs/msg/PoseArray@ignition.msgs.Pose_V",
+                "/model/base_link/tf@tf2_msgs/msg/TFMessage@ignition.msgs.Pose_V",
                 ],
             remappings=[
                 ("/camera_info", "/camera/realsense2_camera/color/camera_info"),
                 ("/camera", "/camera/realsense2_camera/color/image_raw"),
                 ("/depth_camera", "/camera/realsense2_camera/depth/image_rect_raw"),
-                #("/model/f110_car/odometry", "/odom"),
+                ("/model/base_link/odometry", "/odom"),
+                ("/model/base_link/tf", "/tf"),
                 ],
             output='screen',
             parameters=[{'use_sim_time': True}],
@@ -134,20 +136,43 @@ def generate_launch_description():
                        ],
                     parameters=[{'use_sim_time': True}],
                     ),
+                Node(
+                    package='tf2_ros',
+                    executable='static_transform_publisher',
+                    name='map_base_link',
+                    output='screen',
+                    arguments=[
+                        '0', '0', '0', '0.0', '0.0', '0.0',
+                        'map', 'odom'
+                       ],
+                    parameters=[{'use_sim_time': True}],
+                    ),
+                Node(
+                    package='tf2_ros',
+                    executable='static_transform_publisher',
+                    name='odom_base_link',
+                    output='screen',
+                    arguments=[
+                        '0', '0', '0', '0.0', '0.0', '0.0',
+                        'odom', 'base_link'
+                       ],
+                    parameters=[{'use_sim_time': True}],
+                    ),
                 ])
+    robot_state_publisher = Node(package='robot_state_publisher', executable='robot_state_publisher',
+             name='robot_state_publisher',
+             output='screen',
+             arguments=[PathJoinSubstitution([pkg_gazebo_f110, "model", "f110_car.sdf"])])
     return LaunchDescription([
         gazebo_launch_group,
         #m2p_node,
-        world_pose_to_odom_node,
+        #world_pose_to_odom_node,
         wasd_node,
         transforms,
         transform_node,
         ackermann_to_twist_node,
         ros_gz_bridge_node,
         slam_launch,
-        Node(package='robot_state_publisher', executable='robot_state_publisher',
-             name='robot_state_publisher',
-             output='screen',
-             arguments=[PathJoinSubstitution([pkg_gazebo_f110, "model", "f110_car.sdf"])]),
-        rviz
+        rviz,
+        robot_state_publisher
         ])
