@@ -2,6 +2,8 @@
 
 This is the repository for the course "Autonomous Vehicles And Artificial Intelligence" (AVAI).
 
+Take a look at the [Documentation](https://rub-avai.github.io/race-car-buggy-busters/)
+
 ## Structure
 
 The respository contains:

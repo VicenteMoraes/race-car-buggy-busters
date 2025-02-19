@@ -10,6 +10,7 @@ class CarPlatformConfig(BaseModel):
     """The car platform section includes all settings that are based on the car hardware itself
     like driving speeds, steering angles, NOT behavior"""
     max_speed: float # m/s
+    min_speed: float # m/s
     max_steering_angle: float # radian/s
     max_acceleration: float # m/s^2
     max_steering_change: float # radian/s^2

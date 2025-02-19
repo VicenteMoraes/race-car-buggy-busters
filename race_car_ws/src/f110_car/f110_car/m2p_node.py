@@ -28,6 +28,7 @@ class M2P(Node):
         self.get_logger().info(f"Used config:\n{str(self.config)}")
         self.max_steering_angle = self.config.car_platform.max_steering_angle # radians
         self.max_speed = self.config.car_platform.max_speed # m/s
+        self.min_speed = self.config.car_platform.min_speed # m/s
         self.max_acceleration = self.config.car_platform.max_acceleration # m/s
         self.max_steering = self.config.car_platform.max_steering_angle # radians/s
 
@@ -52,7 +53,7 @@ class M2P(Node):
         else:
             self.last_point = new_point
             self.target_stack.append(new_point)
-            self.get_logger().info(f"Received new target point: {self.last_point[0]}")
+            self.get_logger().info(f"Received new target point: {self.last_point}")
 
     def odom_callback(self, odom_msg: Odometry):
         """
@@ -62,7 +63,7 @@ class M2P(Node):
         # Handle target & target stack
         if self.current_target is None and self.target_stack:
             self.current_target = self.target_stack.pop(0)
-            self.get_logger().info(f"Changing to new point (drive restart)")
+            self.get_logger().info("Changing to new point (drive restart)")
 
         if self.current_target is None:
             return
@@ -79,14 +80,16 @@ class M2P(Node):
 
         # Target switching
         if distance < 0.25:
+            self.get_logger().info("Arrived at point area.")
             if self.target_stack:
                 self.get_logger().info("Switching to next target point.")
                 self.current_target = self.target_stack.pop(0)
                 return
             else:
-                self.get_logger().info(f"No new points. Interrupting drive.")
+                self.get_logger().info("No new points. Interrupting drive.")
                 distance = 0.0 # Stop the car
                 self.current_target = None
+                return
 
         t = self.get_clock().now()
         msg = AckermannDriveStamped()
@@ -95,7 +98,7 @@ class M2P(Node):
         msg.header.frame_id = "0"
         msg.drive.steering_angle = np.clip(steering_angle, -self.max_steering_angle, self.max_steering_angle)
         msg.drive.steering_angle_velocity = self.max_steering
-        msg.drive.speed = min(float(distance), float(self.max_speed)) # Set the speed to the distance from the point (when we steer we should reduce that)
+        msg.drive.speed = max(float(self.min_speed), min(float(distance), float(self.max_speed))) # Set the speed to the distance from the point (when we steer we should reduce that)
         msg.drive.jerk = self.max_acceleration
         msg.drive.acceleration = self.max_acceleration
         #msg.jerk = self.max_steering

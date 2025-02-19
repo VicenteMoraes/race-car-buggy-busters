@@ -20,6 +20,8 @@ data_files = [
     ('share/' + package_name, ['package.xml']),
     (os.path.join('share', package_name), glob('launch/*.launch.py')),
     (os.path.join('share', package_name, "world"), glob('world/*.sdf')),
+    (os.path.join('share', package_name), glob('*.yaml')),
+    (os.path.join('share', package_name), glob('*.rviz')),
 ]
 
 data_files += collect_model_files('model')
@@ -34,7 +36,9 @@ setup(
     entry_points={
         'console_scripts': [
             "ackermann_to_twist = gazebo_f110.ackermann_to_twist:main",
-            "world_pose_to_odom = gazebo_f110.world_pose_to_odom:main"
+            "transform_pose = gazebo_f110.pose_transformer:main",
+            "world_pose_to_odom = gazebo_f110.world_pose_to_odom:main",
+            'odom_tf_node = gazebo_f110.odom_tf_node:main',
         ],
     },
 )
