@@ -12,11 +12,27 @@ def generate_launch_description():
     pkg_gazebo_f110 = get_package_share_directory('gazebo_f110')
     slam_toolbox_config = PathJoinSubstitution([pkg_gazebo_f110, "mapper_params_online_async.yaml"])
     
+    use_sim_time = LaunchConfiguration("use_sim_time")
+    
     wasd_node = Node(
             package="test_package",
             namespace="f110",
             executable="wasd_control_node",
             name="wasd_control",
+            parameters=[{'use_sim_time': True}],
+            )
+    move_to_point = Node(
+            package="f110_car",
+            namespace="f110",
+            executable="move_to_point",
+            name="move_to_point",
+            parameters=[{'use_sim_time': True}],
+            )
+    init_drive_node = Node(
+            package="f110_car",
+            namespace="f110",
+            executable="init_drive",
+            name="init_drive",
             parameters=[{'use_sim_time': True}],
             )
     yolo_node = Node(
@@ -186,7 +202,9 @@ def generate_launch_description():
              arguments=[PathJoinSubstitution([pkg_gazebo_f110, "model", "car", "f110_car.sdf"])])
     return LaunchDescription([
         gazebo_launch_group,
-        wasd_node,
+        move_to_point,
+        #init_drive_node,
+        #wasd_node,
         yolo_node,
         cone_marker_node,
         semantic_mapping_node,

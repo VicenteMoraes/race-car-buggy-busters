@@ -20,7 +20,8 @@ setup(
     zip_safe=True,
     entry_points={
         'console_scripts': [
-            "move_to_point = f110_car.m2p_node:main"
+            "move_to_point = f110_car.m2p_node:main",
+            "init_drive = f110_car.init_drive_node:main"
         ],
     },
 )
