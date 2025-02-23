@@ -114,7 +114,7 @@ class M2P(Node):
 
         # Target switching
         if distance < self.epsilon:
-            msg = self.create_drive_msg(steering_angle, 0.0)
+            msg = self.create_drive_msg(0.0, 0.0)
         else: 
             msg = self.create_drive_msg(steering_angle, speed)
 
