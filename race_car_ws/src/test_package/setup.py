@@ -23,7 +23,8 @@ setup(
             'mapping_node = test_package.nodes.mapping_node:main',
             'odom_tf_node = test_package.nodes.odom_tf_node:main',
             'semantic_mapping_node = test_package.nodes.semantic_mapping_node:main',
-            'cone_marker_node = test_package.nodes.cone_marker_node:main'
+            'cone_marker_node = test_package.nodes.cone_marker_node:main',
+            'semantic_grid_visualizer_node = test_package.nodes.semantic_grid_visualizer_node:main'
         ],
     },
 )

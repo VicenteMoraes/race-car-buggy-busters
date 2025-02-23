@@ -56,6 +56,13 @@ def generate_launch_description():
             name="cone_marker_node",
             parameters=[{'use_sim_time': True}],
             )
+    semantic_grid_visualizer_node = Node(
+            package="test_package",
+            namespace="f110",
+            executable="semantic_grid_visualizer_node",
+            name="semantic_grid_visualizer_node",
+            parameters=[{'use_sim_time': True}],
+            )
     ackermann_to_twist_node = Node(
             package="gazebo_f110",
             namespace="gazebo",
@@ -208,6 +215,7 @@ def generate_launch_description():
         yolo_node,
         cone_marker_node,
         semantic_mapping_node,
+        semantic_grid_visualizer_node,
         transforms,
         transform_node,
         ackermann_to_twist_node,

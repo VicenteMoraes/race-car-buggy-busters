@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import math
-
 import numpy as np
 import rclpy
 from rclpy.node import Node
@@ -13,6 +12,7 @@ import tf2_ros
 import tf2_geometry_msgs
 from rclpy.duration import Duration
 from scipy.ndimage import label
+from avai_lab.enums import UNKNOWN_CONE
 
 class SemanticMappingNode(Node):
     """Node for building a semantic map by integrating cone detections into a SLAM map."""
@@ -26,8 +26,7 @@ class SemanticMappingNode(Node):
         self.declare_parameter('semantic_grid_topic', '/semantic_map')
         self.declare_parameter('filtered_map_topic', '/filtered_map')
         self.declare_parameter('max_cone_cells', 30)  # Maximum cluster size for a cone (used for filtering too large objects)
-        self.declare_parameter('cone_merge_distance', 0.10)  # Maximum distance (in m) for which to merge detected yolo cones 
-        self.declare_parameter('cone_size', 0.1)  # Cone size in meters (default 10cm x 10cm) (used for the detected yolo cones)
+        self.declare_parameter('cluster_merge_threshold', 0.1) # maximum distance (in meters) for a cone to “label” a nearby cluster
         
         # Retrieve parameters
         self.map_topic = self.get_parameter('map_topic').value
@@ -35,8 +34,7 @@ class SemanticMappingNode(Node):
         self.semantic_grid_topic = self.get_parameter('semantic_grid_topic').value
         self.filtered_map_topic = self.get_parameter('filtered_map_topic').value
         self.max_cone_cells = self.get_parameter('max_cone_cells').value
-        self.cone_merge_distance = self.get_parameter('cone_merge_distance').value
-        self.cone_size = self.get_parameter('cone_size').value
+        self.cluster_merge_threshold = self.get_parameter('cluster_merge_threshold').value
         
         self.map_sub = self.create_subscription(OccupancyGrid, self.map_topic, self.map_callback, 1)
         self.cones_sub = self.create_subscription(DetectedConeArray, self.cones_topic, self.cones_callback, 1)
@@ -56,6 +54,7 @@ class SemanticMappingNode(Node):
     def map_callback(self, msg):
         """
         Callback for receiving the occupancy grid map.
+        Filters the map & then builds a semantic map with the filtered map.
         
         :param msg: The occupancy grid message from SLAM Toolbox.
         :return: None
@@ -71,54 +70,32 @@ class SemanticMappingNode(Node):
     def cones_callback(self, msg):
         """
         Callback for receiving new cone detections.
+        Transforms the cones into the map frame.
         
         :param msg: The DetectedConeArray message.
         :return: None
         """
         if not self.current_map:
             return
-        self.process_new_cones(msg)
-
-    def process_new_cones(self, cone_array_msg):
-        """
-        Transform each newly detected cone into the map frame and merge it into known_cones.
-        Duplicate detections (i.e. cones of the same type within a threshold distance) are merged.
-        
-        :param cone_array_msg: The DetectedConeArray message.
-        :return: None
-        """
         map_frame = self.current_map.header.frame_id
         
-        for cone in cone_array_msg.cones:
-            trans_point= self.transform_point_to_frame(cone.position, cone.header, map_frame)
+        for cone in msg.cones:
+            trans_point = self.transform_point_to_frame(cone.position, cone.header, map_frame)
             if trans_point is None:
                 continue
             mx = trans_point.point.x
             my = trans_point.point.y
-            
-            merged = False
-            # Check for an existing cone detection with the same label within the merge threshold
-            for i, (kx, ky, k_label) in enumerate(self.known_cones):
-                if k_label != cone.type:
-                    continue
-                distance = math.sqrt((mx - kx) ** 2 + (my - ky) ** 2)
-                if distance < self.cone_merge_distance:
-                    # Merge: average the coordinates
-                    new_x = (kx + mx) / 2.0
-                    new_y = (ky + my) / 2.0
-                    self.known_cones[i] = (new_x, new_y, k_label)
-                    merged = True
-                    break
-            if not merged:
-                self.known_cones.append((mx, my, cone.type))
+            self.known_cones.append((mx, my, cone.type))
 
     def build_semantic_grid(self, filtered_map):
         """
-        Build a semantic grid by overlaying known cone detections onto the filtered map.
-        Each cone is drawn as a square with the size defined by the 'cone_size' parameter.
+        Build a semantic grid by overlaying detected cones onto clusters in the filtered map.
+        For each connected cluster of occupied cells (value 100), if a cone detection is within
+        a cluster_merge_threshold, all cells in that cluster are labeled with the cone's type.
+        Cone detections that are used to label a cluster are stored, all other cones are discarded as we do not need them.
         
         :param filtered_map: The filtered occupancy grid.
-        :return: A SemanticGrid message with overlaid cone detections.
+        :return: A SemanticGrid message with label information.
         """
         semantic_grid = SemanticGrid()
         semantic_grid.header.stamp = self.get_clock().now().to_msg()
@@ -127,44 +104,66 @@ class SemanticMappingNode(Node):
 
         width = filtered_map.info.width
         height = filtered_map.info.height
-        data_len = width * height
-        data_in = list(filtered_map.data)
-
-        semantic_cells = []
-        for i in range(data_len):
-            cell_val = data_in[i]
-            scell = SemanticCell()
-            scell.occupancy = cell_val
-            scell.label = -1
-            if cell_val == 0:
-                scell.label = 0  # free
-            elif cell_val == -1:
-                scell.label = -1  # unknown
-            elif cell_val == 100:
-                scell.label = -1  # occupied but unknown type
-            semantic_cells.append(scell)
-
-        origin_x = filtered_map.info.origin.position.x
-        origin_y = filtered_map.info.origin.position.y
         resolution = filtered_map.info.resolution
 
-        # Determine how many grid cells cover the cone size (cone_size in meters)
-        num_cells = max(1, int(round(self.cone_size / resolution)))
+        #First, populate everything according to the filtered map
+        data_in = list(filtered_map.data)
+        semantic_cells = []
+        for cell_val in data_in:
+            scell = SemanticCell()
+            scell.occupancy = cell_val
+            if cell_val == 0:
+                scell.label = 0
+            elif cell_val == -1:
+                scell.label = -1
+            else:
+                scell.label = UNKNOWN_CONE
+            semantic_cells.append(scell)
         
-        #Mark cone + label at location of yolo cone
-        for (cx, cy, label_val) in self.known_cones:
-            gx, gy = self.world_to_grid(cx, cy, origin_x, origin_y, resolution)
-            start_x = gx - num_cells // 2
-            start_y = gy - num_cells // 2
-            for dx in range(num_cells):
-                for dy in range(num_cells):
-                    cell_x = start_x + dx
-                    cell_y = start_y + dy
-                    if 0 <= cell_x < width and 0 <= cell_y < height:
-                        idx = cell_y * width + cell_x
-                        semantic_cells[idx].occupancy = 100
-                        semantic_cells[idx].label = label_val
-                        #TODO: Also add neighbouring cells to this label if they are occupied ?
+        # Convert grid data into a 2D NumPy array
+        data_array = np.array(filtered_map.data).reshape((height, width))
+        
+        # Create a mask where occupied cells are True and free/unknown cells are False
+        occupied_mask = (data_array == 100)
+        
+        # Find/Label connected regions in the 2d array
+        labeled_array, num_connected_regions = label(occupied_mask)
+        
+        # Convert the cone-to-cluster threshold from meters to grid cells
+        threshold_in_cells = self.cluster_merge_threshold / resolution
+
+        # To keep track of which cones have been used to label a cluster
+        used_cone_indices = set()
+
+        # Iterate over each connected region
+        for region in range(1, num_connected_regions + 1):
+            #Get all cells from the current region/cluster
+            region_indices = np.where(labeled_array == region)
+            if len(region_indices[0]) == 0:
+                continue
+            # Calculate the centroid (grid coordinates)
+            centroid_x = np.mean(region_indices[1])
+            centroid_y = np.mean(region_indices[0])
+            
+            # For each cone detection, convert its world coordinates to grid indices and check distance
+            for idx, (cx, cy, cone_label) in enumerate(self.known_cones):
+                if idx in used_cone_indices:
+                    continue  # Skip cones that have already been used
+                cone_gx, cone_gy = self.world_to_grid(cx, cy, filtered_map.info.origin.position.x,
+                                                       filtered_map.info.origin.position.y, resolution)
+                dist = np.linalg.norm([cone_gx - centroid_x, cone_gy - centroid_y])
+                if dist < threshold_in_cells:
+                    # Label all cells in the cluster with the cone's label
+                    for (gy, gx) in zip(region_indices[0], region_indices[1]):
+                        flat_idx = gy * width + gx
+                        semantic_cells[flat_idx].occupancy = 100
+                        semantic_cells[flat_idx].label = cone_label
+                    used_cone_indices.add(idx)
+                    # Once a cone has labeled a cluster we continue checking the next cluster
+                    break
+
+        # Remove cones that have been processed as duplicate (or that did not label any cluster)
+        self.known_cones = [cone for i, cone in enumerate(self.known_cones) if i in used_cone_indices]
 
         semantic_grid.cells = semantic_cells
         return semantic_grid
