@@ -164,6 +164,7 @@ class SemanticMappingNode(Node):
                         idx = cell_y * width + cell_x
                         semantic_cells[idx].occupancy = 100
                         semantic_cells[idx].label = label_val
+                        #TODO: Also add neighbouring cells to this label if they are occupied ?
 
         semantic_grid.cells = semantic_cells
         return semantic_grid
