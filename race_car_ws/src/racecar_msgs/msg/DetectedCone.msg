@@ -1,3 +1,3 @@
 std_msgs/Header header
-string type  # e.g., "yellow_cone", "blue_cone", "orange_cone"
+int8 type
 geometry_msgs/Point position
