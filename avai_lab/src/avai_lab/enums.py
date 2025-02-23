@@ -7,7 +7,7 @@ Enums for cone labels.
 YELLOW_CONE = 1
 BLUE_CONE = 2
 ORANGE_CONE = 3
-UNKNOWN_CONE = -1
+UNKNOWN_CONE = -2
 
 # Mapping from class string to integer label
 string_to_label = {
