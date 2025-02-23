@@ -162,7 +162,7 @@ class SemanticMappingNode(Node):
                     # Once a cone has labeled a cluster we continue checking the next cluster
                     break
 
-        # Remove cones that have been processed (or that did not label any cluster)
+        # Remove cones that have been processed as duplicate (or that did not label any cluster)
         self.known_cones = [cone for i, cone in enumerate(self.known_cones) if i in used_cone_indices]
 
         semantic_grid.cells = semantic_cells
