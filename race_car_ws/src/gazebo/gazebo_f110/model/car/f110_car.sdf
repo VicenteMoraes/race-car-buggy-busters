@@ -371,8 +371,8 @@
             </axis>
         </joint>
         <!-- SENSORS -->
-        <link name="realsense_link">
-            <pose relative_to="lidar_link">0 0 0.1 0 0 1.5708</pose>
+        <link name="camera_link">
+            <pose relative_to="base_link">0.12 0 0.155 0 0 0</pose>
             <inertial>
                 <mass>0.0615752</mass>
                 <inertia>
@@ -392,6 +392,7 @@
                 </geometry>
             </collision>
             <visual name= "visual">
+                <pose>0 0 0 0 0 1.57</pose>
                 <geometry>
                 <mesh>
                     <uri>model://car/meshes/realsense.dae</uri>
@@ -421,7 +422,7 @@
             </visual>
 
             <sensor name="realsense_d435" type="rgbd_camera">
-                <pose>0 0 0 0 0 -1.5708</pose>
+                <gz_frame_id>camera_link</gz_frame_id>
                 <topic>rgbd_camera</topic>
                 <update_rate>60</update_rate>
                 <camera name="camera">
@@ -452,7 +453,7 @@
                     <format>R8G8B8</format>
                 </image>
                 <clip>
-                    <near>0.01</near>
+                    <near>0.1</near>
                     <far>300</far>
                 </clip>
                 <depth_camera>
@@ -545,23 +546,15 @@
         <right_joint>rear_right_wheel_joint</right_joint>
         <left_steering_joint>front_left_wheel_steering_joint</left_steering_joint>
         <right_steering_joint>front_right_wheel_steering_joint</right_steering_joint>
-        <kingpin_width>1.0</kingpin_width>
-        <!--steering_limit>0.5</steering_limit-->
-        <wheel_base>1.0</wheel_base>
-        <wheel_separation>1.25</wheel_separation>
-        <wheel_radius>0.3</wheel_radius>
-        <!--min_velocity>-1</min_velocity-->
-        <!--max_velocity>1</max_velocity-->
-        <min_acceleration>-3</min_acceleration>
-        <max_acceleration>3</max_acceleration>
-    </plugin>
-    <plugin
-        filename="libignition-gazebo-odometry-publisher-system"
-        name="ignition::gazebo::systems::OdometryPublisher">
-        <odom_topic>/model/f110_car/odometry</odom_topic>
-        <odom_frame>odom</odom_frame>
-        <robot_base_frame>base_link</robot_base_frame>
-        <tf_topic>/model/f110_car/pose</tf_topic>
+        <kingpin_width>.2</kingpin_width>
+        <steering_limit>0.5</steering_limit>
+        <wheel_base>0.3</wheel_base>
+        <wheel_separation>.22</wheel_separation>
+        <wheel_radius>0.055</wheel_radius>
+        <min_velocity>-0.5</min_velocity>
+        <max_velocity>0.5</max_velocity>
+        <min_acceleration>-0.25</min_acceleration>
+        <max_acceleration>0.25</max_acceleration>
     </plugin>
 </model>
 </sdf>

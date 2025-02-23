@@ -1,9 +1,7 @@
-from pathlib import Path
-
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (DeclareLaunchArgument, GroupAction, 
-                            IncludeLaunchDescription, SetLaunchConfiguration)
+                            IncludeLaunchDescription, SetLaunchConfiguration, TimerAction)
 from launch_ros.actions import Node
 from launch.substitutions import PathJoinSubstitution, LaunchConfiguration, TextSubstitution
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -21,11 +19,25 @@ def generate_launch_description():
             name="wasd_control",
             parameters=[{'use_sim_time': True}],
             )
-    m2p_node = Node(
-            package="f110_car",
+    yolo_node = Node(
+            package="test_package",
             namespace="f110",
-            executable="move_to_point",
-            name="move_to_point",
+            executable="yolo_node",
+            name="yolo_node",
+            parameters=[{'use_sim_time': True}],
+            )
+    semantic_mapping_node = Node(
+            package="test_package",
+            namespace="f110",
+            executable="semantic_mapping_node",
+            name="semantic_mapping_node",
+            parameters=[{'use_sim_time': True}],
+            )
+    cone_marker_node = Node(
+            package="test_package",
+            namespace="f110",
+            executable="cone_marker_node",
+            name="cone_marker_node",
             parameters=[{'use_sim_time': True}],
             )
     ackermann_to_twist_node = Node(
@@ -33,13 +45,6 @@ def generate_launch_description():
             namespace="gazebo",
             executable="ackermann_to_twist",
             name="ackermann_to_twist",
-            parameters=[{'use_sim_time': True}],
-            )
-    world_pose_to_odom_node = Node(
-            package="gazebo_f110",
-            namespace="gazebo",
-            executable="world_pose_to_odom",
-            name="world_pose_to_odom",
             parameters=[{'use_sim_time': True}],
             )
     transform_node = Node(
@@ -73,19 +78,18 @@ def generate_launch_description():
                 "/cmd_vel@geometry_msgs/msg/Twist@ignition.msgs.Twist", 
                 "/scan@sensor_msgs/msg/LaserScan@ignition.msgs.LaserScan",
                 "/imu@sensor_msgs/msg/Imu@ignition.msgs.IMU",
-                "/camera@sensor_msgs/msg/Image@ignition.msgs.Image",
-                "/camera_info@sensor_msgs/msg/CameraInfo@ignition.msgs.CameraInfo",
-                "/depth_camera@sensor_msgs/msg/Image@ignition.msgs.Image",
-                "/depth_camera/points@sensor_msgs/msg/PointCloud2@ignition.msgs.PointCloudPacked",
                 "/model/base_link/odometry@nav_msgs/msg/Odometry@ignition.msgs.Odometry",
                 "/world/car_world/pose/info@geometry_msgs/msg/PoseArray@ignition.msgs.Pose_V",
                 "/model/base_link/tf@tf2_msgs/msg/TFMessage@ignition.msgs.Pose_V",
                 "/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock",
+                "/rgbd_camera/image@sensor_msgs/msg/Image@ignition.msgs.Image",
+                "/rgbd_camera/camera_info@sensor_msgs/msg/CameraInfo@ignition.msgs.CameraInfo",
+                "/rgbd_camera/depth_image@sensor_msgs/msg/Image@ignition.msgs.Image",
                 ],
             remappings=[
-                ("/camera_info", "/camera/realsense2_camera/color/camera_info"),
-                ("/camera", "/camera/realsense2_camera/color/image_raw"),
-                ("/depth_camera", "/camera/realsense2_camera/depth/image_rect_raw"),
+                ("/rgbd_camera/camera_info", "/camera/realsense2_camera/color/camera_info"),
+                ("/rgbd_camera/image", "/camera/realsense2_camera/color/image_raw"),
+                ("/rgbd_camera/depth_image", "/camera/realsense2_camera/depth/image_rect_raw"),
                 ("/model/base_link/odometry", "/odom"),
                 ("/model/base_link/tf", "/tf"),
                 ],
@@ -114,42 +118,21 @@ def generate_launch_description():
                    )
                ]
             )
-    # static_tf_base_link_lidar_link = Node(
-    #     package='tf2_ros',
-    #     executable='static_transform_publisher',
-    #     name='static_tf_base_link_lidar_link',
-    #     arguments=['0.12', '0', '0.055', '0', '0', '0', 'base_link', 'f110_car/lidar_link'],
-    #     parameters=[{'use_sim_time': True}],
-    # )
-
-    # static_tf_lidar_link_gpu_lidar = Node(
-    #     package='tf2_ros',
-    #     executable='static_transform_publisher',
-    #     name='static_tf_lidar_link_gpu_lidar',
-    #     arguments=['0', '0', '0', '0', '0', '0', 'f110_car/lidar_link', 'f110_car/lidar_link/gpu_lidar'],
-    #     parameters=[{'use_sim_time': True}],
-    # )
-    # static_tf_base_link_realsense_link = Node(
-    #     package='tf2_ros',
-    #     executable='static_transform_publisher',
-    #     name='static_tf_base_link_realsense_link',
-    #     arguments=['0', '0', '0.1', '1.57079', '0', '-1.57079', 'f110_car/lidar_link', 'f110_car/realsense_link'],
-    #     parameters=[{'use_sim_time': True}],
-    # )
-    # static_tf_realsense_link_realsense_d435 = Node(
-    #     package='tf2_ros',
-    #     executable='static_transform_publisher',
-    #     name='static_tf_realsense_link_realsense_d435',
-    #     arguments=['0', '0', '0', '0', '0', '0', 'f110_car/realsense_link', 'f110_car/realsense_link/realsense_d435'],
-    #     parameters=[{'use_sim_time': True}],
-    # )
-    # static_tf_realsense_link_depth_camera1 = Node(
-    #     package='tf2_ros',
-    #     executable='static_transform_publisher',
-    #     name='static_tf_realsense_link_depth_camera1',
-    #     arguments=['0', '0', '0', '0', '0', '0', 'f110_car/realsense_link', 'f110_car/realsense_link/depth_camera1'],
-    #     parameters=[{'use_sim_time': True}],
-    # )
+    #Kind of hacky way to make sure that this transform is the latest transform (after the car model transforms) and the camera->base_link coordinate transform works
+    static_transform_publisher = TimerAction(
+        period=5.0,
+        actions=[Node(
+                    package='tf2_ros',
+                    executable='static_transform_publisher',
+                    name='camera_tf',
+                    arguments=[
+                        '0.12', '0', '0.155',
+                        '-1.57', '0', '-1.57',
+                        'base_link', 'camera_link'
+                    ],
+                    parameters=[{'use_sim_time': True}],
+                )]
+    )
     transforms = GroupAction(
             actions = [
                 Node(
@@ -200,17 +183,19 @@ def generate_launch_description():
     robot_state_publisher = Node(package='robot_state_publisher', executable='robot_state_publisher',
              name='robot_state_publisher',
              output='screen',
-             arguments=[PathJoinSubstitution([pkg_gazebo_f110, "model", "f110_car.sdf"])])
+             arguments=[PathJoinSubstitution([pkg_gazebo_f110, "model", "car", "f110_car.sdf"])])
     return LaunchDescription([
         gazebo_launch_group,
-        #m2p_node,
-        #world_pose_to_odom_node,
         wasd_node,
+        yolo_node,
+        cone_marker_node,
+        semantic_mapping_node,
         transforms,
         transform_node,
         ackermann_to_twist_node,
         ros_gz_bridge_node,
         slam_launch,
         rviz,
-        robot_state_publisher
+        robot_state_publisher,
+        static_transform_publisher
         ])
