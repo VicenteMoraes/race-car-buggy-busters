@@ -124,16 +124,17 @@ class YoloConeDetectionNode(Node):
         for det in detections:
             x_min, y_min, x_max, y_max = det["bbox"]
 
-            # Determine pixel coordinates (u, v), u is cenetered in the bounding box, v is at the bottom (we use the bottom of the cone as our prefered depth estimation region)
+            # Determine pixel coordinates (u, v), u and v are centered in the bounding box
             if scale_depth_image:
                 x_min_scaled = x_min * scale_x
                 x_max_scaled = x_max * scale_x
                 y_min_scaled = y_min * scale_y
+                y_max_scaled = y_max * scale_y
                 u = int((x_min_scaled + x_max_scaled) / 2)
-                v = int(y_min_scaled + 5)
+                v = int((y_min_scaled + y_max_scaled) / 2)
             else:
                 u = int((x_min + x_max) / 2)
-                v = int(y_min + 5)
+                v = int((y_min + y_max) / 2)
 
             # Convert pixel coordinates to 3D point in camera frame
             pt_camera = self.pixel_to_3d(u, v, depth_image, camera_info_msg)
