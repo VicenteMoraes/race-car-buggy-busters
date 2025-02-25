@@ -42,7 +42,7 @@ class SemanticMappingNode(Node):
         self.filtered_map_pub = self.create_publisher(OccupancyGrid, self.filtered_map_topic, 1)
         self.semantic_pub = self.create_publisher(SemanticGrid, self.semantic_grid_topic, 1)
         
-        # Variables to store the current map and known cone detections in grid space
+        # Variables to store the current map and known cone detections
         self.current_map = None
         self.known_cones = []  # List of tuples: (x, y, label)
         
@@ -78,17 +78,14 @@ class SemanticMappingNode(Node):
         if not self.current_map:
             return
         map_frame = self.current_map.header.frame_id
-        origin_x = self.current_map.info.origin.position.x
-        origin_y = self.current_map.info.origin.position.y
-        resolution = self.current_map.info.resolution
         
         for cone in msg.cones:
             trans_point = self.transform_point_to_frame(cone.position, cone.header, map_frame)
             if trans_point is None:
                 continue
-            grid_x, grid_y = self.world_to_grid(trans_point.point.x, trans_point.point.y,
-                                                origin_x, origin_y, resolution)
-            self.known_cones.append((grid_x, grid_y, cone.type))
+            mx = trans_point.point.x
+            my = trans_point.point.y
+            self.known_cones.append((mx, my, cone.type))
 
     def build_semantic_grid(self, filtered_map):
         """
@@ -149,9 +146,11 @@ class SemanticMappingNode(Node):
             centroid_y = np.mean(region_indices[0])
             
             # For each cone detection, convert its world coordinates to grid indices and check distance
-            for idx, (cone_gx, cone_gy, cone_label) in enumerate(self.known_cones):
+            for idx, (cx, cy, cone_label) in enumerate(self.known_cones):
                 if idx in used_cone_indices:
                     continue  # Skip cones that have already been used
+                cone_gx, cone_gy = self.world_to_grid(cx, cy, filtered_map.info.origin.position.x,
+                                                       filtered_map.info.origin.position.y, resolution)
                 dist = np.linalg.norm([cone_gx - centroid_x, cone_gy - centroid_y])
                 if dist < threshold_in_cells:
                     # Label all cells in the cluster with the cone's label
