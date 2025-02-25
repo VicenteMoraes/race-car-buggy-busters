@@ -76,6 +76,31 @@ class ExplorationNode(Node):
         msg.pose.position.y = y
         return msg
 
+    def get_left_cone(self, cone_positions: npt.NDArray, labels: npt.NDArray, 
+                       projected_point: npt.NDArray) -> npt.NDArray | None:
+        vehicle_location = np.array([self.last_pose.pose.pose.position.x, self.last_pose.pose.pose.position.y])
+        for cone_pos in cone_positions[labels == enums.YELLOW_CONE]:
+            if utils.is_right(vehicle_location, projected_point, cone_pos):
+                return cone_pos
+        
+        for cone_pos in cone_positions[labels == enums.UNKNOWN_CONE]:
+            if utils.is_right(vehicle_location, projected_point, cone_pos):
+                return cone_pos
+        return None
+
+
+    def get_right_cone(self, cone_positions: npt.NDArray, labels: npt.NDArray, 
+                       projected_point: npt.NDArray) -> npt.NDArray | None:
+        vehicle_location = np.array([self.last_pose.pose.pose.position.x, self.last_pose.pose.pose.position.y])
+        for cone_pos in cone_positions[labels == enums.BLUE_CONE]:
+            if not utils.is_right(vehicle_location, projected_point, cone_pos):
+                return cone_pos
+        
+        for cone_pos in cone_positions[labels == enums.UNKNOWN_CONE]:
+            if not utils.is_right(vehicle_location, projected_point, cone_pos):
+                return cone_pos
+        return None
+
     def semantic_grid_callback(self, msg: SemanticGrid):
         if self.last_pose is None:
             self.get_logger().info("Pose not initialized, skipping semantic grid callback")
@@ -124,27 +149,16 @@ class ExplorationNode(Node):
         dist_sort_idx = np.argsort(distances)
         sorted_labels = position_labels[dist_sort_idx]
         # Find the closest yellow cone that is to the right of the projection vector
-        vehicle_location = np.array([self.last_pose.pose.pose.position.x, self.last_pose.pose.pose.position.y])
-        yellow_cone_position = None
-        for idx, cone_pos in enumerate(cone_positions[dist_sort_idx][sorted_labels == enums.YELLOW_CONE]):
-            if utils.is_right(vehicle_location, projected_point, cone_pos):
-                print(f"found yellow cone at {cone_pos} with distance: {distances[dist_sort_idx][idx]}")
-                yellow_cone_position = cone_pos
-                break
-        if yellow_cone_position is None:
+        right_cone_position = self.get_right_cone(cone_positions[dist_sort_idx], sorted_labels, projected_point)
+        if right_cone_position is None:
             self.get_logger().info("Could not locate a yellow cone to the right of the vehicle")
             return
 
-        blue_cone_position = None
-        for idx, cone_pos in enumerate(cone_positions[dist_sort_idx][sorted_labels == enums.BLUE_CONE]):
-            if not utils.is_right(vehicle_location, projected_point, cone_pos):
-                print(f"found blue cone at {cone_pos} with distance: {distances[dist_sort_idx][idx]}")
-                blue_cone_position = cone_pos
-                break
-        if blue_cone_position is None:
+        left_cone_position = self.get_left_cone(cone_positions[dist_sort_idx], sorted_labels, projected_point)
+        if left_cone_position is None:
             self.get_logger().info("Could not locate a blue cone to the left of the vehicle")
             return
-        target_point = yellow_cone_position + (blue_cone_position - yellow_cone_position) / 2
+        target_point = right_cone_position + (left_cone_position - right_cone_position) / 2
         self.target_point_publisher.publish(self.create_target_point_msg(*target_point))
 
 def main(args=None):
