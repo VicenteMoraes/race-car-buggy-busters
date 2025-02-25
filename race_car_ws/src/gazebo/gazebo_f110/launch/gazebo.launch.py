@@ -5,6 +5,7 @@ from launch.actions import (DeclareLaunchArgument, GroupAction,
 from launch_ros.actions import Node
 from launch.substitutions import PathJoinSubstitution, LaunchConfiguration, TextSubstitution
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.conditions import IfCondition
 
 def generate_launch_description():
     pkg_ros_gz_sim = get_package_share_directory('ros_gz_sim')
@@ -12,7 +13,8 @@ def generate_launch_description():
     pkg_gazebo_f110 = get_package_share_directory('gazebo_f110')
     slam_toolbox_config = PathJoinSubstitution([pkg_gazebo_f110, "mapper_params_online_async.yaml"])
     
-    use_sim_time = LaunchConfiguration("use_sim_time")
+    use_sim_time = LaunchConfiguration("use_sim_time", default=True)
+    start_rviz = LaunchConfiguration("start_rviz", default=True)
     
     wasd_node = Node(
             package="test_package",
@@ -84,6 +86,7 @@ def generate_launch_description():
             name="rviz2",
             arguments=["-d", PathJoinSubstitution([pkg_gazebo_f110, "rviz_config.rviz"])],
             parameters=[{'use_sim_time': True}],
+            condition=IfCondition(start_rviz)
             )
     slam_launch = IncludeLaunchDescription(
             PythonLaunchDescriptionSource(PathJoinSubstitution([get_package_share_directory("slam_toolbox"),
@@ -211,7 +214,7 @@ def generate_launch_description():
         gazebo_launch_group,
         move_to_point,
         #init_drive_node,
-        #wasd_node,
+        wasd_node,
         yolo_node,
         cone_marker_node,
         semantic_mapping_node,
