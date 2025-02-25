@@ -132,6 +132,12 @@ class SemanticMappingNode(Node):
         # Convert the cone-to-cluster threshold from meters to grid cells
         threshold_in_cells = self.cluster_merge_threshold / resolution
 
+        cone_grid_coords = []
+        for (cx, cy, cone_label) in self.known_cones:
+            cone_gx, cone_gy = self.world_to_grid(cx, cy, filtered_map.info.origin.position.x,
+                                                       filtered_map.info.origin.position.y, resolution)
+            cone_grid_coords.append((cone_gx, cone_gy, cone_label))
+        
         # To keep track of which cones have been used to label a cluster
         used_cone_indices = set()
 
@@ -146,11 +152,9 @@ class SemanticMappingNode(Node):
             centroid_y = np.mean(region_indices[0])
             
             # For each cone detection, convert its world coordinates to grid indices and check distance
-            for idx, (cx, cy, cone_label) in enumerate(self.known_cones):
+            for idx, (cone_gx, cone_gy, cone_label) in enumerate(cone_grid_coords):
                 if idx in used_cone_indices:
                     continue  # Skip cones that have already been used
-                cone_gx, cone_gy = self.world_to_grid(cx, cy, filtered_map.info.origin.position.x,
-                                                       filtered_map.info.origin.position.y, resolution)
                 dist = np.linalg.norm([cone_gx - centroid_x, cone_gy - centroid_y])
                 if dist < threshold_in_cells:
                     # Label all cells in the cluster with the cone's label
