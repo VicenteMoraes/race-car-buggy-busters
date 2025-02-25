@@ -30,11 +30,18 @@ def generate_launch_description():
             name="move_to_point",
             parameters=[{'use_sim_time': True}],
             )
-    init_drive_node = Node(
+    exploration_node = Node(
             package="f110_car",
             namespace="f110",
-            executable="init_drive",
-            name="init_drive",
+            executable="exploration_node",
+            name="exploration_node",
+            parameters=[{'use_sim_time': True}],
+            )
+    exploration_vis_node = Node(
+            package="f110_car",
+            namespace="f110",
+            executable="exploration_vis_node",
+            name="exploration_vis_node",
             parameters=[{'use_sim_time': True}],
             )
     yolo_node = Node(
@@ -213,8 +220,9 @@ def generate_launch_description():
     return LaunchDescription([
         gazebo_launch_group,
         move_to_point,
-        #init_drive_node,
-        wasd_node,
+        exploration_node,
+        exploration_vis_node,
+        #wasd_node,
         yolo_node,
         cone_marker_node,
         semantic_mapping_node,
