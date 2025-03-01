@@ -8,10 +8,8 @@ from rcl_interfaces.msg import SetParametersResult
 import numpy as np
 
 from avai_lab.utils import get_direction_vec, quat_to_rot_vec, rot_from_vec
-# from avai_lab.config import load_config
 
 from ackermann_msgs.msg import AckermannDriveStamped
-from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
 
 class M2P(Node):
@@ -99,7 +97,6 @@ class M2P(Node):
             return
 
         pose_msg = self.last_pose_msg
-        self.get_logger().info(f"Current position: {pose_msg.pose.pose.position.x, pose_msg.pose.pose.position.y}, target: {self.target}")
         # Extract target and vehicle state
         pos = np.array([pose_msg.pose.pose.position.x, pose_msg.pose.pose.position.y]) # We only need to calculate in 2D
         direction_vec = get_direction_vec(pos, self.target)
