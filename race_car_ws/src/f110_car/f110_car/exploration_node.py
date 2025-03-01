@@ -95,12 +95,12 @@ class ExplorationNode(Node):
         assert len(cone_positions) == len(labels), "The amount of labels must equal the amount of cone positions"
         vehicle_location = np.array([self.last_pose.pose.pose.position.x, self.last_pose.pose.pose.position.y])
         for cone_pos in cone_positions[labels == enums.BLUE_CONE]:
-            if utils.is_right(vehicle_location, projected_point, cone_pos):
+            if not utils.is_right(vehicle_location, projected_point, cone_pos):
                 return cone_pos
         
         # If no colored cone is found, take the closest unknown cone
         for cone_pos in cone_positions[labels == enums.UNKNOWN_CONE]:
-            if utils.is_right(vehicle_location, projected_point, cone_pos):
+            if not utils.is_right(vehicle_location, projected_point, cone_pos):
                 return cone_pos
         return None
 
@@ -117,12 +117,12 @@ class ExplorationNode(Node):
         assert len(cone_positions) == len(labels), "The amount of labels must equal the amount of cone positions"
         vehicle_location = np.array([self.last_pose.pose.pose.position.x, self.last_pose.pose.pose.position.y])
         for cone_pos in cone_positions[labels == enums.YELLOW_CONE]:
-            if not utils.is_right(vehicle_location, projected_point, cone_pos):
+            if utils.is_right(vehicle_location, projected_point, cone_pos):
                 return cone_pos
         
         # If no colored cone is found, take the closest unknown cone
         for cone_pos in cone_positions[labels == enums.UNKNOWN_CONE]:
-            if not utils.is_right(vehicle_location, projected_point, cone_pos):
+            if utils.is_right(vehicle_location, projected_point, cone_pos):
                 return cone_pos
         return None
 
