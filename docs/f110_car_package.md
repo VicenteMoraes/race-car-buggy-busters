@@ -2,6 +2,10 @@
 
 This package contains all ROS2 nodes and logic that will run on the car platform.
 
+## Exploration
+
+::: f110_car.exploration_node
+
 ## Move to Point
 
 Uses the 
