@@ -20,9 +20,8 @@ class WorldPoseToOdom(Node):
     def pose_array_callback(self, pose_arr: PoseArray):
         pose = pose_arr.poses[0]
 
-        t = self.get_clock().now()
         msg = Odometry()
-        msg.header.stamp = t.to_msg()
+        msg.header.stamp = pose_arr.header.stamp
         msg.pose.pose.position.x = pose.position.x
         msg.pose.pose.position.y = pose.position.y
         msg.pose.pose.position.z = pose.position.z
