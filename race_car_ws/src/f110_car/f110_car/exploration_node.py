@@ -13,6 +13,7 @@ from avai_lab import enums, utils, msg_conversion
 
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
 from racecar_msgs.msg import SemanticGrid
+from ackermann_msgs.msg import AckermannDriveStamped
 
 class ExplorationNode(Node):
     """
@@ -31,6 +32,7 @@ class ExplorationNode(Node):
         self.declare_parameter("map_pose_topic", "/pose")
         self.declare_parameter("semantic_grid_topic", "/semantic_map")
         self.declare_parameter("target_point_topic", "/target_point")
+        self.declare_parameter("drive_topic", "/drive")
         self.declare_parameter("projection_point_distance", 2)
         self.declare_parameter("active", True)
 
@@ -38,11 +40,17 @@ class ExplorationNode(Node):
                                                          self.pose_callback, 10)
         self.semantic_grid_subscriber = self.create_subscription(SemanticGrid, self.get_parameter("semantic_grid_topic").value, 
                                                                  self.semantic_grid_callback, 10)
+        self.drive_subscriber = self.create_subscription(AckermannDriveStamped, self.get_parameter("drive_topic").value, 
+                                                                 self.drive_topic_callback, 10)
         self.target_point_publisher = self.create_publisher(PoseStamped, self.get_parameter("target_point_topic").value, 10)
         self.forward_unit_vec = [1, 0, 0] # TODO: This will be wrong in the ROS2 coordinate system
         self.last_pose = None
+        self.current_steering_angle = 0
         self.active = self.get_parameter("active").value
         self.add_on_set_parameters_callback(self.param_callback)
+
+    def drive_topic_callback(self, msg: AckermannDriveStamped):
+        self.current_steering_angle = msg.drive.steering_angle
 
     def param_callback(self, params):
         for param in params:
@@ -60,6 +68,7 @@ class ExplorationNode(Node):
         """
         assert self.last_pose is not None, "Pose not initialized"
         rotation_radians = utils.quat_to_rot_vec(self.last_pose.pose.pose.orientation.z, self.last_pose.pose.pose.orientation.w)
+        #rotation_radians += self.current_steering_angle
         rotation_axis = np.array([0, 0, 1])
          
         rotation_vector = rotation_radians * rotation_axis
@@ -97,24 +106,11 @@ class ExplorationNode(Node):
         idx = labels == enums.BLUE_CONE
         for cone_pos, distance in zip(cone_positions[idx], distances[idx]):
             #cone_relative_car = cone_pos - vehicle_location
-            #projection_relative_car = projected_point - vehicle_location
-            #angle = utils.angle_between(projection_relative_car, cone_relative_car)
-            #if abs(angle) > 1.570796: # Angles larger than 90 degrees mean its behind the vehicle
-            #    continue
-            #self.get_logger().info(f"Angle left: {angle}")
-            angle = utils.angle_between_three(cone_pos, vehicle_location, projected_point)
-            if angle > 1.570796:
-                continue
-            if distance > 5:
-                continue
             if not utils.is_right(vehicle_location, projected_point, cone_pos):
                 return cone_pos
         
         # If no colored cone is found, take the closest unknown cone
         for cone_pos in cone_positions[labels == enums.UNKNOWN_CONE]:
-            angle = utils.angle_between_three(cone_pos, vehicle_location, projected_point)
-            if angle > 1.570796:
-                continue
             if not utils.is_right(vehicle_location, projected_point, cone_pos):
                 return cone_pos
         return None
@@ -134,25 +130,11 @@ class ExplorationNode(Node):
         idx = labels == enums.YELLOW_CONE
         for cone_pos, distance in zip(cone_positions[idx], distances):
             # check if the cone is in front of the vehicle
-            #cone_relative_car = cone_pos - vehicle_location
-            #projection_relative_car = projected_point - vehicle_location
-            #angle = utils.angle_between(projection_relative_car, cone_relative_car)
-            #if abs(angle) > 1.570796: # Angles larger than 90 degrees mean its behind the vehicle
-            #    continue
-            #self.get_logger().info(f"Angle right: {angle}")
-            angle = utils.angle_between_three(cone_pos, vehicle_location, projected_point)
-            if angle > 1.570796:
-                continue
-            if distance > 5:
-                continue
             if utils.is_right(vehicle_location, projected_point, cone_pos):
                 return cone_pos
         
         # If no colored cone is found, take the closest unknown cone
         for cone_pos in cone_positions[labels == enums.UNKNOWN_CONE]:
-            angle = utils.angle_between_three(cone_pos, vehicle_location, projected_point)
-            if angle > 1.570796:
-                continue
             if utils.is_right(vehicle_location, projected_point, cone_pos):
                 return cone_pos
         return None
