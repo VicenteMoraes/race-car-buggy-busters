@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 from typing import List
+from enum import Enum
+from collections import deque
+from copy import deepcopy
 import rclpy
 from rclpy.node import Node
 from rcl_interfaces.srv import SetParameters
-from rcl_interfaces.msg import Parameter, ParameterType
+from rcl_interfaces.msg import Parameter, ParameterType, ParameterValue
 
 import numpy as np
 import numpy.typing as npt
@@ -15,6 +18,12 @@ from avai_lab import enums, utils, msg_conversion
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
 from nav_msgs.msg import Path
 from racecar_msgs.msg import SemanticGrid
+
+class State(Enum):
+    START = 0
+    LEFT_START = 1
+    FINISHED_LAP = 2
+    GLOBAL_PLAN = 3
 
 class GlobalPlanningNode(Node):
     """
@@ -47,21 +56,35 @@ class GlobalPlanningNode(Node):
         self.path = []
         self.left_starting_area = False
         self.start_position = None
-        #self.cli = self.create_client(SetParameters, '/exploration_node/set_parameters')
-        #while not self.cli.wait_for_service(timeout_sec=1.0):
-        #    self.get_logger().info('service not available, waiting again...')
-        self.req = SetParameters.Request()
+        self.state = State.START
+        self.exploration_node_cli = self.create_client(SetParameters, 'f110/exploration_node/set_parameters')
+        while not self.exploration_node_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        self.deactivate_exploration()
 
     def deactivate_exploration(self):
+        req = SetParameters.Request()
         param = Parameter()
         param.name = "active"
         param.value.type = ParameterType.PARAMETER_BOOL
-        param.value = False
-        self.req.parameters.append(param)
+        param.value = ParameterValue(bool_value=False, type=ParameterType.PARAMETER_BOOL)
+        req.parameters.append(param)
 
-        self.future = self.cli.call_async(self.req)
-        rclpy.spin_until_future_complete(self, self.future)
-        return self.future.result()
+        future = self.exploration_node_cli.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
+        return future.result()
+
+    def increase_speed_of_vehicle(self, speed: float):
+        req = SetParameters.Request()
+        param = Parameter()
+        param.name = "max_speed"
+        param.value.type = ParameterType.PARAMETER_BOOL
+        param.value = False
+        req.parameters.append(param)
+
+        future = self.self.m2p_cli.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
+        return future.result()
     
     def publish_path(self):
         msg = Path()
@@ -76,12 +99,32 @@ class GlobalPlanningNode(Node):
             self.start_position = np.array([msg.pose.pose.position.x, msg.pose.pose.position.y])
         vehicle_location = np.array([msg.pose.pose.position.x, msg.pose.pose.position.y])
         self.path.append(self.create_pose_stamped_from_pose_with_covariance(msg))
-        if not self.left_starting_area:
-            self.get_logger().info("Did not leave start")
-            distance_to_start = np.linalg.norm((self.start_position, vehicle_location))
-            self.left_starting_area = distance_to_start > self.start_point_epsilon
-        else:
-            self.get_logger().info("Left start")
+        distance_to_start = np.linalg.norm((self.start_position, vehicle_location))
+        match self.state:
+            case State.START:
+                if distance_to_start > self.start_point_epsilon:
+                    self.state = State.LEFT_START
+            case State.LEFT_START:
+                if distance_to_start < self.start_point_epsilon:
+                    self.state = State.FINISHED_LAP
+                    start_target_point_msg = self.create_target_point_msg(*self.start_position)
+                    self.target_point_publisher.publish(start_target_point_msg)
+                    self.get_logger().info("Back at start")
+            case State.FINISHED_LAP:
+                # calculate optimal path?
+                self.optimal_path = deque(deepcopy(self.path))
+                self.state = State.GLOBAL_PLAN
+            case State.GLOBAL_PLAN:
+                while True:
+                    current_point = self.optimal_path[0]
+                    p = np.array([current_point.pose.position.x, current_point.pose.position.y])
+                    distance = np.linalg.norm((p, vehicle_location))
+                    if distance < self.start_point_epsilon:
+                        self.optimal_path.rotate(-1)
+                    else:
+                        break
+                target_msg = self.create_target_point_msg(*p)
+                self.target_point_publisher.publish(target_msg)
         self.publish_path()
 
 

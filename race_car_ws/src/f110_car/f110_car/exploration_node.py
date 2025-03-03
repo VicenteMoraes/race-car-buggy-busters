@@ -47,6 +47,7 @@ class ExplorationNode(Node):
     def param_callback(self, params):
         for param in params:
             if param.name == "active":
+                self.get_logger().info(f"Active status changed to: {param.value}")
                 self.active = param.value
         return SetParametersResult(successful=True)
 
