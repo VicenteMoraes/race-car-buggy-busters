@@ -2,13 +2,14 @@
 from typing import List
 import rclpy
 from rclpy.node import Node
+from rcl_interfaces.msg import SetParametersResult
 
 import numpy as np
 import numpy.typing as npt
 from scipy.ndimage import label
 from scipy.spatial.transform import Rotation
 
-from avai_lab import enums, utils
+from avai_lab import enums, utils, msg_conversion
 
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
 from racecar_msgs.msg import SemanticGrid
@@ -31,6 +32,7 @@ class ExplorationNode(Node):
         self.declare_parameter("semantic_grid_topic", "/semantic_map")
         self.declare_parameter("target_point_topic", "/target_point")
         self.declare_parameter("projection_point_distance", 2)
+        self.declare_parameter("active", True)
 
         self.map_pose_subscriber = self.create_subscription(PoseWithCovarianceStamped, self.get_parameter("map_pose_topic").value,
                                                          self.pose_callback, 10)
@@ -39,20 +41,17 @@ class ExplorationNode(Node):
         self.target_point_publisher = self.create_publisher(PoseStamped, self.get_parameter("target_point_topic").value, 10)
         self.forward_unit_vec = [1, 0, 0] # TODO: This will be wrong in the ROS2 coordinate system
         self.last_pose = None
+        self.active = self.get_parameter("active").value
+        self.add_on_set_parameters_callback(self.param_callback)
+
+    def param_callback(self, params):
+        for param in params:
+            if param.name == "active":
+                self.active = param.value
+        return SetParametersResult(successful=True)
 
     def pose_callback(self, msg: PoseWithCovarianceStamped):
         self.last_pose = msg
-
-    @staticmethod
-    def semantic_grid_to_np(grid: SemanticGrid) -> npt.NDArray:
-        width = grid.info.width
-        height = grid.info.height
-        labels = np.empty((height, width), dtype=int)
-        for i, cell in enumerate(grid.cells):
-            row = i // width
-            col = i % width
-            labels[row, col] = cell.label
-        return labels
 
     def get_car_projection_vector(self) -> List:
         """Extract the current rotation from the last received pose message and create
@@ -95,6 +94,12 @@ class ExplorationNode(Node):
         assert len(cone_positions) == len(labels), "The amount of labels must equal the amount of cone positions"
         vehicle_location = np.array([self.last_pose.pose.pose.position.x, self.last_pose.pose.pose.position.y])
         for cone_pos in cone_positions[labels == enums.BLUE_CONE]:
+            #cone_relative_car = cone_pos - vehicle_location
+            #projection_relative_car = projected_point - vehicle_location
+            #angle = utils.angle_between(projection_relative_car, cone_relative_car)
+            #if abs(angle) > 1.570796: # Angles larger than 90 degrees mean its behind the vehicle
+            #    continue
+            #self.get_logger().info(f"Angle left: {angle}")
             if not utils.is_right(vehicle_location, projected_point, cone_pos):
                 return cone_pos
         
@@ -117,6 +122,13 @@ class ExplorationNode(Node):
         assert len(cone_positions) == len(labels), "The amount of labels must equal the amount of cone positions"
         vehicle_location = np.array([self.last_pose.pose.pose.position.x, self.last_pose.pose.pose.position.y])
         for cone_pos in cone_positions[labels == enums.YELLOW_CONE]:
+            # check if the cone is in front of the vehicle
+            #cone_relative_car = cone_pos - vehicle_location
+            #projection_relative_car = projected_point - vehicle_location
+            #angle = utils.angle_between(projection_relative_car, cone_relative_car)
+            #if abs(angle) > 1.570796: # Angles larger than 90 degrees mean its behind the vehicle
+            #    continue
+            #self.get_logger().info(f"Angle right: {angle}")
             if utils.is_right(vehicle_location, projected_point, cone_pos):
                 return cone_pos
         
@@ -129,10 +141,12 @@ class ExplorationNode(Node):
     def semantic_grid_callback(self, msg: SemanticGrid):
         """Convert the grid into a numpy array and calculate a new target point
         """
+        if not self.active:
+            return
         if self.last_pose is None:
             self.get_logger().info("Pose not initialized, skipping semantic grid callback")
             return
-        grid = self.semantic_grid_to_np(msg)
+        grid = msg_conversion.semantic_grid_to_np(msg)
         valid_labels = [
             enums.YELLOW_CONE,
             enums.BLUE_CONE,
