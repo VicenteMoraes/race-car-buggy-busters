@@ -84,7 +84,7 @@ class ExplorationNode(Node):
         return msg
 
     def get_left_cone(self, cone_positions: npt.NDArray, labels: npt.NDArray, 
-                       projected_point: npt.NDArray) -> npt.NDArray | None:
+                      projected_point: npt.NDArray, distances: npt.NDArray) -> npt.NDArray | None:
         """Retrieve the closest blue cone that lies on the left side of the vehicle
         :param cone_positions: A 2D numpy array with the cones in the first dimension and the x,y coordinates in the
             second dimension
@@ -94,25 +94,34 @@ class ExplorationNode(Node):
         """
         assert len(cone_positions) == len(labels), "The amount of labels must equal the amount of cone positions"
         vehicle_location = np.array([self.last_pose.pose.pose.position.x, self.last_pose.pose.pose.position.y])
-        for cone_pos in cone_positions[labels == enums.BLUE_CONE]:
+        idx = labels == enums.BLUE_CONE
+        for cone_pos, distance in zip(cone_positions[idx], distances[idx]):
             #cone_relative_car = cone_pos - vehicle_location
             #projection_relative_car = projected_point - vehicle_location
             #angle = utils.angle_between(projection_relative_car, cone_relative_car)
             #if abs(angle) > 1.570796: # Angles larger than 90 degrees mean its behind the vehicle
             #    continue
             #self.get_logger().info(f"Angle left: {angle}")
+            angle = utils.angle_between_three(cone_pos, vehicle_location, projected_point)
+            if angle > 1.570796:
+                continue
+            if distance > 5:
+                continue
             if not utils.is_right(vehicle_location, projected_point, cone_pos):
                 return cone_pos
         
         # If no colored cone is found, take the closest unknown cone
         for cone_pos in cone_positions[labels == enums.UNKNOWN_CONE]:
+            angle = utils.angle_between_three(cone_pos, vehicle_location, projected_point)
+            if angle > 1.570796:
+                continue
             if not utils.is_right(vehicle_location, projected_point, cone_pos):
                 return cone_pos
         return None
 
 
     def get_right_cone(self, cone_positions: npt.NDArray, labels: npt.NDArray, 
-                       projected_point: npt.NDArray) -> npt.NDArray | None:
+                       projected_point: npt.NDArray, distances: npt.NDArray) -> npt.NDArray | None:
         """Retrieve the closest yellow cone that lies on the right side of the vehicle
         :param cone_positions: A 2D numpy array with the cones in the first dimension and the x,y coordinates in the
             second dimension
@@ -122,7 +131,8 @@ class ExplorationNode(Node):
         """
         assert len(cone_positions) == len(labels), "The amount of labels must equal the amount of cone positions"
         vehicle_location = np.array([self.last_pose.pose.pose.position.x, self.last_pose.pose.pose.position.y])
-        for cone_pos in cone_positions[labels == enums.YELLOW_CONE]:
+        idx = labels == enums.YELLOW_CONE
+        for cone_pos, distance in zip(cone_positions[idx], distances):
             # check if the cone is in front of the vehicle
             #cone_relative_car = cone_pos - vehicle_location
             #projection_relative_car = projected_point - vehicle_location
@@ -130,11 +140,19 @@ class ExplorationNode(Node):
             #if abs(angle) > 1.570796: # Angles larger than 90 degrees mean its behind the vehicle
             #    continue
             #self.get_logger().info(f"Angle right: {angle}")
+            angle = utils.angle_between_three(cone_pos, vehicle_location, projected_point)
+            if angle > 1.570796:
+                continue
+            if distance > 5:
+                continue
             if utils.is_right(vehicle_location, projected_point, cone_pos):
                 return cone_pos
         
         # If no colored cone is found, take the closest unknown cone
         for cone_pos in cone_positions[labels == enums.UNKNOWN_CONE]:
+            angle = utils.angle_between_three(cone_pos, vehicle_location, projected_point)
+            if angle > 1.570796:
+                continue
             if utils.is_right(vehicle_location, projected_point, cone_pos):
                 return cone_pos
         return None
@@ -190,13 +208,14 @@ class ExplorationNode(Node):
         # get the sorting index by distance
         dist_sort_idx = np.argsort(distances)
         sorted_labels = position_labels[dist_sort_idx]
+        sorted_distances = distances[dist_sort_idx]
         # Find the closest yellow cone that is to the right of the projection vector
-        right_cone_position = self.get_right_cone(cone_positions[dist_sort_idx], sorted_labels, projected_point)
+        right_cone_position = self.get_right_cone(cone_positions[dist_sort_idx], sorted_labels, projected_point, sorted_distances)
         if right_cone_position is None:
             self.get_logger().info("Could not locate a yellow cone to the right of the vehicle")
             return
 
-        left_cone_position = self.get_left_cone(cone_positions[dist_sort_idx], sorted_labels, projected_point)
+        left_cone_position = self.get_left_cone(cone_positions[dist_sort_idx], sorted_labels, projected_point, sorted_distances)
         if left_cone_position is None:
             self.get_logger().info("Could not locate a blue cone to the left of the vehicle")
             return
