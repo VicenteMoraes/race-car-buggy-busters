@@ -43,6 +43,7 @@ class GlobalPlanningNode(Node):
         self.declare_parameter("semantic_grid_topic", "/semantic_map")
         self.declare_parameter("target_point_topic", "/target_point")
         self.declare_parameter("start_point_epsilon", 1)
+        self.declare_parameter("point_epsilon", 3)
         self.declare_parameter("path_topic", "/path")
 
         self.map_pose_subscriber = self.create_subscription(PoseWithCovarianceStamped, self.get_parameter("map_pose_topic").value,
@@ -60,7 +61,6 @@ class GlobalPlanningNode(Node):
         self.exploration_node_cli = self.create_client(SetParameters, 'f110/exploration_node/set_parameters')
         while not self.exploration_node_cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
-        self.deactivate_exploration()
 
     def deactivate_exploration(self):
         req = SetParameters.Request()
@@ -71,8 +71,6 @@ class GlobalPlanningNode(Node):
         req.parameters.append(param)
 
         future = self.exploration_node_cli.call_async(req)
-        rclpy.spin_until_future_complete(self, future)
-        return future.result()
 
     def increase_speed_of_vehicle(self, speed: float):
         req = SetParameters.Request()
@@ -83,8 +81,6 @@ class GlobalPlanningNode(Node):
         req.parameters.append(param)
 
         future = self.self.m2p_cli.call_async(req)
-        rclpy.spin_until_future_complete(self, future)
-        return future.result()
     
     def publish_path(self):
         msg = Path()
@@ -112,20 +108,32 @@ class GlobalPlanningNode(Node):
                     self.get_logger().info("Back at start")
             case State.FINISHED_LAP:
                 # calculate optimal path?
-                self.optimal_path = deque(deepcopy(self.path))
+                self.optimal_path = deque(deepcopy(self.path[::10]))
                 self.state = State.GLOBAL_PLAN
+                self.get_logger().info("Deactivating Exploration node")
+                self.deactivate_exploration()
+                p = self.get_next_point(vehicle_location)
+                target_msg = self.create_target_point_msg(*p)
+                self.target_point_publisher.publish(target_msg)
             case State.GLOBAL_PLAN:
-                while True:
-                    current_point = self.optimal_path[0]
-                    p = np.array([current_point.pose.position.x, current_point.pose.position.y])
-                    distance = np.linalg.norm((p, vehicle_location))
-                    if distance < self.start_point_epsilon:
-                        self.optimal_path.rotate(-1)
-                    else:
-                        break
+                p = self.get_next_point(vehicle_location)
+                self.get_logger().info(f"Publishing point: {p}")
                 target_msg = self.create_target_point_msg(*p)
                 self.target_point_publisher.publish(target_msg)
         self.publish_path()
+
+    def get_next_point(self, vehicle_location: npt.NDArray) -> npt.NDArray:
+        threshold = self.get_parameter("point_epsilon").value
+        while True:
+            current_point = self.optimal_path[0]
+            p = np.array([current_point.pose.position.x, current_point.pose.position.y])
+            distance = np.linalg.norm((p, vehicle_location))
+            self.get_logger().info(f"Checking point: {p} with distance: {distance}")
+            if distance < threshold:
+                self.optimal_path.rotate(-1)
+            else:
+                break
+        return p
 
 
     def target_point_callback(self, msg: PoseStamped):
