@@ -15,8 +15,15 @@ from racecar_msgs.msg import SemanticGrid
 
 class ExplorationNode(Node):
     """
-    Node that subscribes to the "/drive" topic, collects all AckermannDriveStamped msgs and
-    converts them to Twist msgs which are published to the "/cmd_vel" topic.
+    Uses the immediate surroundings as orientation points to calculate target points with a short distance
+    to the vehicle that lie inside of a track.
+    The node subscribes to a semantic grid which holds the position of cones on a map alongside their label.
+    The algorithm to calculate a new target point creates a projection point in front of the vehicle (in driving direction)
+    and calculates the distances to all cones on the semantic grid. It then uses the closest blue cone to the left
+    and the closest yellow cone to the right to calculate the gravitational center between the two and use that as
+    a new target point.
+    
+    projection_point_distance: Distance from the projection point to the vehicle in meters
     """
     def __init__(self):
         super().__init__("exploration_node") # "NodeName" will be displayed in rqt_graph
@@ -78,30 +85,50 @@ class ExplorationNode(Node):
 
     def get_left_cone(self, cone_positions: npt.NDArray, labels: npt.NDArray, 
                        projected_point: npt.NDArray) -> npt.NDArray | None:
+        """Retrieve the closest blue cone that lies on the left side of the vehicle
+        :param cone_positions: A 2D numpy array with the cones in the first dimension and the x,y coordinates in the
+            second dimension
+        :param labels: A numpy array holding the labels for the cone positions
+        :param projected_point: A numpy array holding the x,y coordinates of the projected point in front of the vehicle
+        :return: A numpy array with the x, y coordinates of the cone
+        """
+        assert len(cone_positions) == len(labels), "The amount of labels must equal the amount of cone positions"
         vehicle_location = np.array([self.last_pose.pose.pose.position.x, self.last_pose.pose.pose.position.y])
-        for cone_pos in cone_positions[labels == enums.YELLOW_CONE]:
-            if utils.is_right(vehicle_location, projected_point, cone_pos):
+        for cone_pos in cone_positions[labels == enums.BLUE_CONE]:
+            if not utils.is_right(vehicle_location, projected_point, cone_pos):
                 return cone_pos
         
+        # If no colored cone is found, take the closest unknown cone
         for cone_pos in cone_positions[labels == enums.UNKNOWN_CONE]:
-            if utils.is_right(vehicle_location, projected_point, cone_pos):
+            if not utils.is_right(vehicle_location, projected_point, cone_pos):
                 return cone_pos
         return None
 
 
     def get_right_cone(self, cone_positions: npt.NDArray, labels: npt.NDArray, 
                        projected_point: npt.NDArray) -> npt.NDArray | None:
+        """Retrieve the closest yellow cone that lies on the right side of the vehicle
+        :param cone_positions: A 2D numpy array with the cones in the first dimension and the x,y coordinates in the
+            second dimension
+        :param labels: A numpy array holding the labels for the cone positions
+        :param projected_point: A numpy array holding the x,y coordinates of the projected point in front of the vehicle
+        :return: A numpy array with the x, y coordinates of the cone
+        """
+        assert len(cone_positions) == len(labels), "The amount of labels must equal the amount of cone positions"
         vehicle_location = np.array([self.last_pose.pose.pose.position.x, self.last_pose.pose.pose.position.y])
-        for cone_pos in cone_positions[labels == enums.BLUE_CONE]:
-            if not utils.is_right(vehicle_location, projected_point, cone_pos):
+        for cone_pos in cone_positions[labels == enums.YELLOW_CONE]:
+            if utils.is_right(vehicle_location, projected_point, cone_pos):
                 return cone_pos
         
+        # If no colored cone is found, take the closest unknown cone
         for cone_pos in cone_positions[labels == enums.UNKNOWN_CONE]:
-            if not utils.is_right(vehicle_location, projected_point, cone_pos):
+            if utils.is_right(vehicle_location, projected_point, cone_pos):
                 return cone_pos
         return None
 
     def semantic_grid_callback(self, msg: SemanticGrid):
+        """Convert the grid into a numpy array and calculate a new target point
+        """
         if self.last_pose is None:
             self.get_logger().info("Pose not initialized, skipping semantic grid callback")
             return
