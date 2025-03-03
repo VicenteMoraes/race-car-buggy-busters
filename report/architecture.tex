@@ -1,0 +1,7 @@
+The autonomous vehicle system is divided into several interconnected modules that ensure efficient perception, localization and planning. 
+The perception system uses the SLAM toolbox for simultaneous localization and mapping, while RViz is used for real-time visualization of sensor data. 
+Cone detection is performed by a YOLO-based node that uses a trained deep learning model to identify cones in the camera image, enabling accurate detection of the route boundary. 
+Lidar and camera data are continuously retrieved and used to perform perception. The sensor fusion module processes and combines data from these sources to create a comprehensive model of the environment.
+
+Localization is responsible for determining the exact position of the vehicle in relation to an HD map by using the fused data from the perception sensors. 
+This module provides the position of the vehicle, which serves as essential input for path planning.
