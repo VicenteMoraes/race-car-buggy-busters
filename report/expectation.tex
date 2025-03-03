@@ -2,7 +2,8 @@ The goal of this project is to develop an autonomous race car capable of complet
 The vehicle is positioned in the driving direction at the start. The race environment follows the F1TENTH cone system, where blue cones mark the left boundary, yellow cones mark the right boundary, and the start zone is identified by orange cones on both sides. 
 The track is a closed-loop circuit without any branches, and its layout changes between races. The vehicle operates without other cars on the track, with a maximum speed of approximately 15 km/h. 
 A perception round precedes the timed lap. The system utilizes ROS for software integration and runs on an NVIDIA Jetson NX 16GB. The vehicle is equipped with a 3D + mono camera (Intel RealSense Depth Camera D435i) and a high-resolution 2D LiDAR (Hokuyo UST-10), and it features a four-wheel-drive system with Ackermann steering for navigation.
-\subsection{System Requirements}
+Below are our functional and quality requirements listed for this project:
+\subsection{Functional Requirements}
 
 \begin{itemize}
     \item \textbf{General Perception}: The vehicle shall capture real-time 3D depth data using the Hokuyo UST-10 LiDAR and high-resolution visual data using the Intel RealSense Depth Camera D435i to perceive the environment.
@@ -39,4 +40,16 @@ A perception round precedes the timed lap. The system utilizes ROS for software 
     \item \textbf{Manual Override Mode}: The system should be able to transition to a manual override mode in case of critical failures, allowing the race team to take control if necessary.
     \item \textbf{Partial System Failures}: The system shall include multiple levels of safety checks, and emergency overrides shall be functional even in the event of partial system failures.
     \item \textbf{Testing}: The vehicle shall be tested in both simulation and real-world environments to validate its perception, planning, and control systems.
+\end{itemize}
+
+\subsection{Quality Requirements}
+
+\begin{itemize}
+    \item \textbf{Sensor Processing Latency}: The system shall process sensor data in real-time with latency under 50 ms to ensure timely decision-making and control.
+    \item \textbf{Control Loop Frequency}: The vehicle shall maintain a control loop update frequency of 20-30 Hz to ensure smooth and responsive driving at max. 15 km/h.
+    \item \textbf{Localization Accuracy}: The localization system shall maintain position \(\pm 10\) cm to ensure the vehicle stays within the track boundaries.
+    \item \textbf{Perception Radius}: The perception system shall detect cones at least 10 meters ahead to provide sufficient time for path adjustments.
+    \item \textbf{Emergency Braking Distance}: The vehicle shall decelerate within 2-3 meters when the emergency braking system is engaged to ensure safe stopping.
+    \item \textbf{Emergency Stop}: The vehicle shall engage the emergency braking system within 100 ms of detecting critical system failures to avoid accidents.
+    \item \textbf{Detection Rate}: The perception system shall maintain a continuous detection rate of at least 95\% for cones to prevent boundary violations.
 \end{itemize}
