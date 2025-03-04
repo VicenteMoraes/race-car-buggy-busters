@@ -2,7 +2,7 @@ In order to quickly iterate, work in parallel, and also work independently from 
 Gazebo is a lightweight simulator which implements the SDF file format to describe robots and worlds and has close integrations with ROS2.
 Since the project is constrained to using ROS2 Humble, the Fortress version was chosen since it is the recommended platform for Humble and Ubuntu jammy.
 For the LiDAR sensor the Gazebo implementation is used and parametrized to fit the properties of the Sick LiDAR used by the F1Tenth hardware.
-The RGB- and depth camera is modelled using the \textbf{TODO}.
+The RGB- and depth camera is modeled using the realsense camera sensor plugin available for gazebo \cite{realsense-gazebo}.
 
 \subsection{Gazebo Communication}
 
@@ -29,7 +29,7 @@ The \textbf{create} service can be used to instantiate SDF-files into a running 
 The \textbf{remove} service can be used to remove entities from the simulation. This call can unfortunately not be batched resulting in very long execution times when trying to remove many entities from the simulation. At first this was supposed to generate a new track every time the environment was reset but the associated rebuild time resulted in infeasible training times (over a minute for a rebuild).\\
 \textbf{control} is a service able to start or stop the simulation or run it for a certain amount of time steps. This was first used to make the `step` function of the environment deterministic but resulted in too many system calls for Gazebo which resulted in data inconsistencies and dropped calls.
 
-\subsection{Environment Generation}
+\subsection{Track Generation}
 
 Since the Formula Student tracks are defined by cones we implemented a generator for tracks with some free parameters like size, width, cone distance and shape.
 The track generation algorithm samples $n$-points from a normal distribution $\mathcal{N}(\mu, \sigma^2)$ with $\mu = 0$ and $\sigma = 1$ to create a 2D point cloud. These points are then used to calculate the concave hull to retrieve the outer shape of the point cloud. At first I tried using the convex-hull of the point cloud but a concave-hull does not contain left-curves (when traversed clock-wise) which would truncate the action space by half since only positive steering angles would be required to traverse the track. This would lead to poor generalization when tested in the real world where tracks will contain left curves. The set of points of the concave hull is then z-normalized (subtraction of mean divided by the standard deviation) and then scaled to the desired track size.
@@ -64,7 +64,7 @@ Figure \ref{fig:track} shows the generated track for the environment from a top-
 \vskip 0.2in
 \begin{center}
 \centerline{\includegraphics[width=\columnwidth]{track.png}}
-\caption{The generated track boundaries using the RNG seed 42 with the parameters later used in training. Blue dots mark the positions of cones.}
+\caption{The generated track boundaries using the RNG seed 42. Blue dots mark the positions of cones.}
 \label{fig:track}
 \end{center}
 \vskip -0.2in
