@@ -1,3 +1,17 @@
-During the development phase, we wanted to ensure that our steps worked as expected and delivered the right functionality. Two main approaches were taken during development. One was the use of Gazebo simulation to verify that specific implementations met our expectations. However, we were aware that the simulation does not necessarily have to match the behavior of the actual platform. For the car platform, we initially used pre-recorded rosbags from the F1TENTH system. This was one of the most efficient ways to test and analyze the vehicle’s response to real-world data.
+During the development phase, we wanted to ensure that our steps worked as expected and delivered the right functionality. Two main approaches were taken during development. One was the use of Gazebo simulation to verify that specific implementations met our expectations. However, we were aware that the simulation does not necessarily have to match the behavior of the actual platform. For the car platform, we initially used pre-recorded rosbags from the F1TENTH system. This was one of the most efficient ways to test and analyze the vehicle’s response to real-world data.\\
+\newline
+In addition to simulation-based validation, we also implemented unit tests for several nodes during development to ensure the correctness of the functions within each node. These unit tests were designed to validate key components of the system, such as perception, control, and localization, by checking their outputs against expected values. By automating these tests, we were able to quickly detect and fix issues, ensuring the stability and reliability of the software. This approach provided an additional layer of confidence in our implementation before deploying the system to real-world scenarios.\\
+\newline
+Still, live testing was necessary in order to guarantee that the car's behavior in simulation translates into the real world. These tests took place in the AVAI lab space mostly during the weekly sprint meetings in the lecture period and also on an irregular basis in the lecture free period. During those tests the functionality of the current state of the stack was tested and reviewed. For this, one had to establish a sshX connection to the car. This connection enables the car to access our GitHub repository for synchronization and branch checkout, and the tester to start nodes or launch files on the car. \\
+\newline
+Most of these tests were documented in a short result protocol that was shared amongst the development team. For extensive debugging some protocols included the test setup and tasks as can be seen in Figure \ref{fig:protocol}.
 
-In addition to simulation-based validation, we also implemented unit tests for several nodes during development to ensure the correctness of the functions within each node. These unit tests were designed to validate key components of the system, such as perception, control, and localization, by checking their outputs against expected values. By automating these tests, we were able to quickly detect and fix issues, ensuring the stability and reliability of the software. This approach provided an additional layer of confidence in our implementation before deploying the system to real-world scenarios.
+\begin{figure}[htp]
+	\vskip 0.2in
+	\begin{center}
+		\centerline{\includegraphics[width=\columnwidth]{protocol.png}}
+		\caption{Screenshot of one test report.}
+		\label{fig:protocol}
+	\end{center}
+	\vskip -0.2in
+\end{figure}
