@@ -54,12 +54,17 @@ class GlobalPlanningNode(Node):
         self.target_point_publisher = self.create_publisher(PoseStamped, self.get_parameter("target_point_topic").value, 10)
         self.path_publisher = self.create_publisher(Path, self.get_parameter("path_topic").value, 10)
         self.start_point_epsilon = self.get_parameter("start_point_epsilon").value
+        self.next_point_threshold = self.get_parameter("point_epsilon").value
         self.path = []
         self.left_starting_area = False
         self.start_position = None
         self.state = State.START
+
         self.exploration_node_cli = self.create_client(SetParameters, 'f110/exploration_node/set_parameters')
+        self.m2p_cli = self.create_client(SetParameters, 'f110/move_to_point/set_parameters')
         while not self.exploration_node_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        while not self.m2p_cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
 
     def deactivate_exploration(self):
@@ -73,14 +78,15 @@ class GlobalPlanningNode(Node):
         future = self.exploration_node_cli.call_async(req)
 
     def increase_speed_of_vehicle(self, speed: float):
+        self.get_logger().info(f"Set move to point node max speed to {speed}")
         req = SetParameters.Request()
         param = Parameter()
         param.name = "max_speed"
-        param.value.type = ParameterType.PARAMETER_BOOL
-        param.value = False
+        param.value.type = ParameterType.PARAMETER_DOUBLE
+        param.value = ParameterValue(double_value=speed, type=ParameterType.PARAMETER_DOUBLE)
         req.parameters.append(param)
 
-        future = self.self.m2p_cli.call_async(req)
+        future = self.m2p_cli.call_async(req)
     
     def publish_path(self):
         msg = Path()
@@ -115,21 +121,19 @@ class GlobalPlanningNode(Node):
                 p = self.get_next_point(vehicle_location)
                 target_msg = self.create_target_point_msg(*p)
                 self.target_point_publisher.publish(target_msg)
+                self.increase_speed_of_vehicle(1.0)
             case State.GLOBAL_PLAN:
                 p = self.get_next_point(vehicle_location)
-                self.get_logger().info(f"Publishing point: {p}")
                 target_msg = self.create_target_point_msg(*p)
                 self.target_point_publisher.publish(target_msg)
         self.publish_path()
 
     def get_next_point(self, vehicle_location: npt.NDArray) -> npt.NDArray:
-        threshold = self.get_parameter("point_epsilon").value
         while True:
             current_point = self.optimal_path[0]
             p = np.array([current_point.pose.position.x, current_point.pose.position.y])
             distance = np.linalg.norm(p - vehicle_location)
-            self.get_logger().info(f"Checking point: {p} with distance: {distance}")
-            if distance < threshold:
+            if distance < self.next_point_threshold:
                 self.optimal_path.rotate(-1)
             else:
                 break
