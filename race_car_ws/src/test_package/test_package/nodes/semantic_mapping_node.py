@@ -46,12 +46,12 @@ class SemanticMappingNode(Node):
         
         # Variables to store the current map and known cone detections
         self.current_map = None
-        self.new_cones = []  # List of tuples: (grid_x, grid_y, label)
+        self.new_cones = []  # List of tuples: (world_x, world_y, label)
         
         # Persistent cluster data:
         #   key: cluster_id (int)
         #   val: {
-        #       "centroid": (cx, cy),       # in grid coordinates
+        #       "centroid": (cx, cy),       # in world coordinates
         #       "label_counts": {label_val: hits, ...}
         #   }
         self.clusters_dict = {}
@@ -90,23 +90,19 @@ class SemanticMappingNode(Node):
         if not self.current_map:
             return
         map_frame = self.current_map.header.frame_id
-        origin_x = self.current_map.info.origin.position.x
-        origin_y = self.current_map.info.origin.position.y
-        resolution = self.current_map.info.resolution
         
         for cone in msg.cones:
             trans_point = self.transform_point_to_frame(cone.position, cone.header, map_frame)
             if trans_point is None:
                 continue
-            # Convert the cone’s world coordinates to grid coordinates.
-            grid_x, grid_y = self.world_to_grid(trans_point.point.x, trans_point.point.y, origin_x, origin_y, resolution)
-            self.new_cones.append((grid_x, grid_y, cone.type))
+            # Store the cone’s world coordinates (instead of grid coordinates)
+            self.new_cones.append((trans_point.point.x, trans_point.point.y, cone.type))
 
     def build_semantic_grid(self, filtered_map):
         """
         Build a semantic grid by overlaying detected cones onto clusters in the filtered map.
         For each connected cluster of occupied cells (value 100), if a cone detection is within
-        a cluster_merge_threshold (converted to grid cells), the cluster gets a 'hit' for this label.
+        a cluster_merge_threshold (in meters), the cluster gets a 'hit' for this label.
         All cells in a cluster are labeled with the label that has the highest amount of hits.
         Clusters and their label hits are persisted (and centroids updated if they drift a bit in the map).
         
@@ -121,6 +117,8 @@ class SemanticMappingNode(Node):
         width = filtered_map.info.width
         height = filtered_map.info.height
         resolution = filtered_map.info.resolution
+        origin_x = filtered_map.info.origin.position.x
+        origin_y = filtered_map.info.origin.position.y
 
         #First, populate everything according to the filtered map
         data_in = list(filtered_map.data)
@@ -146,7 +144,7 @@ class SemanticMappingNode(Node):
         labeled_array, num_connected_regions = label(occupied_mask)
         
         #If no connected regions are found, skip labeling
-        if num_connected_regions == 0 or not self.new_cones:
+        if num_connected_regions == 0:
             semantic_grid.cells = semantic_cells
             return semantic_grid
         
@@ -156,40 +154,39 @@ class SemanticMappingNode(Node):
                                 index=range(1, num_connected_regions + 1))
         
         # Convert cone detections into a NumPy array for vectorized distance checks.
-        cones_np = np.array(self.new_cones) # shape (N, 3) because columns are grid_x, grid_y, cone_label
-
-        # Convert the cone-to-cluster threshold from meters to grid cells
-        threshold_in_cells = self.cluster_merge_threshold / resolution
+        cones_np = np.array(self.new_cones) # shape (N, 3) because columns are world_x, world_y, cone_label
 
         # Build a mapping from temporary region numbers to persistent cluster IDs
         region2cluster = {}
 
         #Go through each region, match to stored clusters and update hits/cone detections
         for region_num, centroid in enumerate(centroids, start=1):
-            # centroid is (row, col); use directly as grid coordinates.
-            centroid_x_grid = centroid[1]
-            centroid_y_grid = centroid[0]
+            # centroid is (row, col); convert to world coordinates.
+            centroid_grid_x = centroid[1]
+            centroid_grid_y = centroid[0]
+            centroid_world_x = origin_x + (centroid_grid_x + 0.5) * resolution
+            centroid_world_y = origin_y + (centroid_grid_y + 0.5) * resolution
 
             # Match to an existing cluster (or create a new one).
-            cluster_id = self.match_cluster_to_existing(centroid_x_grid, centroid_y_grid, threshold_in_cells)
+            cluster_id = self.match_cluster_to_existing(centroid_world_x, centroid_world_y, self.cluster_merge_threshold)
             if cluster_id is None:
                 cluster_id = len(self.clusters_dict)
                 self.clusters_dict[cluster_id] = {
-                    "centroid": (centroid_x_grid, centroid_y_grid),
+                    "centroid": (centroid_world_x, centroid_world_y),
                     "label_counts": defaultdict(int)
                 }
             else:
                 # If the cluster already exists, update the centroid to account for minor drift.
-                self.clusters_dict[cluster_id]["centroid"] = (centroid_x_grid, centroid_y_grid)
+                self.clusters_dict[cluster_id]["centroid"] = (centroid_world_x, centroid_world_y)
             region2cluster[region_num] = cluster_id
 
             # If there are cone detections, update the clusters label hits
             if cones_np.shape[0] > 0:
-                # Compute distances from this centroid to all cone detections in grid cells
-                distances = np.hypot(cones_np[:, 0] - centroid_x_grid,
-                                     cones_np[:, 1] - centroid_y_grid)
+                # Compute distances from this centroid to all cone detections in meters
+                distances = np.hypot(cones_np[:, 0] - centroid_world_x,
+                                     cones_np[:, 1] - centroid_world_y)
                 # Find cone detections within the threshold.
-                hits = np.where(distances < threshold_in_cells)[0]
+                hits = np.where(distances < self.cluster_merge_threshold)[0]
                 #Update hits
                 for idx in hits:
                     cone_label = int(cones_np[idx, 2])
@@ -217,21 +214,21 @@ class SemanticMappingNode(Node):
         return semantic_grid
 
     
-    def match_cluster_to_existing(self, centroid_x, centroid_y, threshold):
+    def match_cluster_to_existing(self, centroid_world_x, centroid_world_y, threshold):
         """
-        Given a cluster centroid in grid coordinates, try to match it with an existing cluster.
+        Given a cluster centroid in world coordinates, try to match it with an existing cluster.
         Returns the cluster_id if a match is found (distance less than threshold), otherwise None.
         
-        :param centroid_x: The x-coordinate in grid cells.
-        :param centroid_y: The y-coordinate in grid cells.
-        :param threshold: The merge threshold in grid cells.
+        :param centroid_world_x: The x-coordinate in world coordinates.
+        :param centroid_world_y: The y-coordinate in world coordinates.
+        :param threshold: The merge threshold in meters.
         """
         min_dist = float('inf')
         best_cluster_id = None
 
         for cid, cluster_info in self.clusters_dict.items():
             cx, cy = cluster_info["centroid"]
-            dist = np.hypot(centroid_x - cx, centroid_y - cy)
+            dist = np.hypot(centroid_world_x - cx, centroid_world_y - cy)
             if dist < threshold and dist < min_dist:
                 min_dist = dist
                 best_cluster_id = cid
@@ -252,7 +249,7 @@ class SemanticMappingNode(Node):
         height = occupancy_map.info.height
         resolution = occupancy_map.info.resolution
         # Convert grid data into a 2D NumPy array
-        data_array = np.array(filtered_map.data).reshape((height, width))
+        data_array = np.array(occupancy_map.data).reshape((height, width))
         
         # Create a mask where occupied cells are True and free/unknown cells are False
         occupied_mask = (data_array == 100)
