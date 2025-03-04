@@ -45,7 +45,9 @@ jobs:
                 pip3 install -e ./avai_lab[docs]
         
             - name: Build ROS 2 Packages
+              shell: bash
               run: |
+                source /opt/ros/humble/setup.bash
                 cd race_car_ws
                 colcon build
 
