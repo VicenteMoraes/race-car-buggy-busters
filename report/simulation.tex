@@ -1,8 +1,8 @@
-In order to quickly iterate and work in parallel on the project a simulation was implemented using Gazebo Fortress as a simulator.
+In order to quickly iterate, work in parallel, and also work independently from the racecar on the project a simulation was implemented using Gazebo Fortress as a simulator.
 Gazebo is a lightweight simulator which implements the SDF file format to describe robots and worlds and has close integrations with ROS2.
 Since the project is constrained to using ROS2 Humble, the Fortress version was chosen since it is the recommended platform for Humble and Ubuntu jammy.
 For the LiDAR sensor the Gazebo implementation is used and parametrized to fit the properties of the Sick LiDAR used by the F1Tenth hardware.
-The RGB- and depth camera is modeled using the \textbf{TODO}.
+The RGB- and depth camera is modelled using the \textbf{TODO}.
 
 \subsection{Gazebo Communication}
 
@@ -12,7 +12,8 @@ However Gazebo Fortress exposes services over a CLI. This can be used to impleme
 The whole implementation is available in the Github repository of this project and implements the different message types using the pydantic framework. 
 The messages are then serialized into strings and sent to Gazebo over a system call. 
 Even though some service calls can be batched for example when spawning many entities (cones) at once, 
-this approach introduces some delays and the system calls can also timeout when send with a high frequency.
+this approach introduces some delays and the system calls can also timeout when send with a high frequency.\\
+\newline
 The main services made available this way are:
 
 \begin{itemize}
@@ -23,17 +24,18 @@ The main services made available this way are:
 \item "/world/:world:/control"
 \end{itemize}
 
+
 The \textbf{create} service can be used to instantiate SDF-files into a running Gazebo simulation where the models are instantiated as a blocking call (appear immediately from the perspective of the simulation). \textbf{create\_multiple} can be used to batch many calls to the create service to reduce the load. \textbf{set\_pose} is a service for manipulating the position and rotation of entities in the simulation. In this project it is used to set the position and rotation of the vehicle to a neutral position after a reset call to the environment.\\
 The \textbf{remove} service can be used to remove entities from the simulation. This call can unfortunately not be batched resulting in very long execution times when trying to remove many entities from the simulation. At first this was supposed to generate a new track every time the environment was reset but the associated rebuild time resulted in infeasible training times (over a minute for a rebuild).\\
 \textbf{control} is a service able to start or stop the simulation or run it for a certain amount of time steps. This was first used to make the `step` function of the environment deterministic but resulted in too many system calls for Gazebo which resulted in data inconsistencies and dropped calls.
 
 \subsection{Environment Generation}
 
-Since the formular student tracks are defined by cones we implemented a generator for tracks with some free parameters like size, width, cone distance and shape.
+Since the Formula Student tracks are defined by cones we implemented a generator for tracks with some free parameters like size, width, cone distance and shape.
 The track generation algorithm samples $n$-points from a normal distribution $\mathcal{N}(\mu, \sigma^2)$ with $\mu = 0$ and $\sigma = 1$ to create a 2D point cloud. These points are then used to calculate the concave hull to retrieve the outer shape of the point cloud. At first I tried using the convex-hull of the point cloud but a concave-hull does not contain left-curves (when traversed clock-wise) which would truncate the action space by half since only positive steering angles would be required to traverse the track. This would lead to poor generalization when tested in the real world where tracks will contain left curves. The set of points of the concave hull is then z-normalized (subtraction of mean divided by the standard deviation) and then scaled to the desired track size.
-Afterwards a polygon is created from the concave hull and buffered by the track width $w$ to produce an inner and outer polygon boundary defining the border of the track. The track can now still contain some sharp curves that are not fit for the car platform since it can not steer around them. To solve this, Chaikins corner cutting algorithm \cite{chaikin1974algorithm} was applied to the borders where the number of refinements $r$ is a free parameter.
+Afterwards a polygon is created from the concave hull and buffered by the track width $w$ to produce an inner and outer polygon boundary defining the border of the track. The track can now still contain some sharp curves that are not fit for the car platform since it can not steer around them. To solve this, Chaikins corner cutting algorithm \cite{chaikin1974algorithm} was applied to the borders where the number of refinements $r$ is a free parameter.\\
 \newline
-The application of the corner cutting algorithm now leaves the borders of the track with sparse data points on straight sections and dense data points on the refined sections where sharp curves occured. To end up with an even distribution of cone positions the borders are resampled using linear interpolation.
+The application of the corner cutting algorithm now leaves the borders of the track with sparse data points on straight sections and dense data points on the refined sections where sharp curves occurred. To end up with an even distribution of cone positions the borders are resampled using linear interpolation.
 In order to introduce some more complex track environments, the $d$ parameter can be used to pull $d$ evenly spaced points from the concave hull inwards, leading to sharper curves.
 
 \begin{algorithm}[tb]
@@ -72,5 +74,5 @@ Figure \ref{fig:track} shows the generated track for the environment from a top-
 
 Apart from system calls to interact with services provided by Gazebo Fortress we use the ROS-Gazebo-Bridge to convert the topics and data types published in Gazebo to ROS2. 
 This is a transport layer that is available in python and can be launched using ROS2 and the regular python launch file syntax. 
-This conversion process is very resource intensive which is why only the LiDAR sensor and the Odometry can be updated with a high frequency.
+This conversion process is very resource intensive which is why only the LiDAR sensor and the odometry can be updated with a high frequency.
 
