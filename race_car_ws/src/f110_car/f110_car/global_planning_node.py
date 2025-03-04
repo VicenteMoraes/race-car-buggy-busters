@@ -43,7 +43,7 @@ class GlobalPlanningNode(Node):
         self.declare_parameter("semantic_grid_topic", "/semantic_map")
         self.declare_parameter("target_point_topic", "/target_point")
         self.declare_parameter("start_point_epsilon", 1)
-        self.declare_parameter("point_epsilon", 3)
+        self.declare_parameter("point_epsilon", 1)
         self.declare_parameter("path_topic", "/path")
 
         self.map_pose_subscriber = self.create_subscription(PoseWithCovarianceStamped, self.get_parameter("map_pose_topic").value,
@@ -127,14 +127,13 @@ class GlobalPlanningNode(Node):
         while True:
             current_point = self.optimal_path[0]
             p = np.array([current_point.pose.position.x, current_point.pose.position.y])
-            distance = np.linalg.norm((p, vehicle_location))
+            distance = np.linalg.norm(p - vehicle_location)
             self.get_logger().info(f"Checking point: {p} with distance: {distance}")
             if distance < threshold:
                 self.optimal_path.rotate(-1)
             else:
                 break
         return p
-
 
     def target_point_callback(self, msg: PoseStamped):
         pass
