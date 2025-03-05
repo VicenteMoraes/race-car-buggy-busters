@@ -36,5 +36,5 @@ jobs:
               shell: bash
               run: |
                 source race_car_ws/install/setup.bash
-                python -m coverage run -m pytest unit_tests/
-                python -m coverage report --fail-under=60
+                python3 -m coverage run -m pytest unit_tests/
+                python3 -m coverage report --fail-under=60
