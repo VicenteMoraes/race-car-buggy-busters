@@ -1,5 +1,5 @@
 
-from gazebo_f110.pose_transformer import GazeboPoseTransformer
+from race_car_ws.src.gazebo.gazebo_f110.gazebo_f110.pose_transformer import GazeboPoseTransformer
 import pytest
 import rclpy
 from rclpy.node import Node
@@ -10,14 +10,12 @@ from geometry_msgs.msg import TransformStamped
 import tf2_ros
 
 @pytest.fixture(scope='function')
-def rclpy_node():
-    rclpy.init()
+def rclpy_node(ros_setup):
     node = GazeboPoseTransformer()
     executor = SingleThreadedExecutor()
     executor.add_node(node)
     yield node
     node.destroy_node()
-    rclpy.shutdown()
 
 @pytest.fixture(scope='function')
 def publisher(rclpy_node):

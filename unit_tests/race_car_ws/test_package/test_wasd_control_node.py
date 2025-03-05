@@ -1,17 +1,9 @@
 import pytest
-import rclpy
 from unittest.mock import MagicMock
 from pynput.keyboard import KeyCode
 
-from test_package.nodes.wasd_control_node import WASDControl, DriveState
+from race_car_ws.src.test_package.test_package.nodes.wasd_control_node import WASDControl, DriveState
 from ackermann_msgs.msg import AckermannDriveStamped
-
-
-@pytest.fixture(scope="session")
-def ros_setup():
-    rclpy.init()
-    yield
-    rclpy.shutdown()
 
 
 @pytest.fixture
