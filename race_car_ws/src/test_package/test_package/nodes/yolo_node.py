@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-
 import math
 import numpy as np
 import rclpy
@@ -15,11 +14,12 @@ from ultralytics import YOLO
 import tf2_ros
 import tf2_geometry_msgs
 from rclpy.duration import Duration
-
 import message_filters
 
 from avai_lab.enums import string_to_label, UNKNOWN_CONE
 
+import pyrealsense2 as rs
+from realsense2_camera_msgs.msg import Extrinsics
 
 class YoloConeDetectionNode(Node):
     """
@@ -35,6 +35,11 @@ class YoloConeDetectionNode(Node):
         self.declare_parameter('confidence_threshold', 0.25) # Confidence threshold for filtering yolo detections
         self.declare_parameter('frame_id', 'base_link') # The target frame to which cone positions will be transformed.
         self.declare_parameter('patch_size', 5) # The amount of pixels to average over for depth detection of the cone
+        self.declare_parameter('depth_camera_info_topic', '/camera/realsense2_camera/depth/camera_info')
+        self.declare_parameter('extrinsics_topic', '/camera/realsense2_camera/extrinsics/depth_to_color')
+        self.declare_parameter('depth_scale', 0.001)  # to convert depth units (mm to m)
+        self.declare_parameter('depth_min', 0.1) # Minimum depth (m)
+        self.declare_parameter('depth_max', 10.0) # Maximum depth (m)
 
         image_topic = self.get_parameter('image_topic').value
         camera_info_topic = self.get_parameter('camera_info_topic').value
@@ -44,6 +49,11 @@ class YoloConeDetectionNode(Node):
         self.conf_threshold = self.get_parameter('confidence_threshold').value
         self.frame_id = self.get_parameter('frame_id').value
         self.patch_size = self.get_parameter('patch_size').value
+        depth_camera_info_topic = self.get_parameter('depth_camera_info_topic').value
+        extrinsics_topic = self.get_parameter('extrinsics_topic').value
+        self.depth_scale = self.get_parameter('depth_scale').value
+        self.depth_min = self.get_parameter('depth_min').value
+        self.depth_max = self.get_parameter('depth_max').value
 
         self.model = YOLO(model_path)
         self.bridge = CvBridge()
@@ -53,12 +63,18 @@ class YoloConeDetectionNode(Node):
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
-        # Setup synchronized subscriptions for image, camera info, and depth topics
+        self.extrinsics_sub = self.create_subscription(Extrinsics, extrinsics_topic, self.extrinsics_callback, 10)
+        self.extrinsics_R = None  # 3x3 rotation matrix
+        self.extrinsics_t = None  # 3-element translation vector
+
+        # Setup synchronized subscriptions for color image, camera info, depth image, and depth camera info.
         self.image_sub = message_filters.Subscriber(self, Image, image_topic)
         self.camera_info_sub = message_filters.Subscriber(self, CameraInfo, camera_info_topic)
         self.depth_sub = message_filters.Subscriber(self, Image, depth_topic)
+        self.depth_camera_info_sub = message_filters.Subscriber(self, CameraInfo, depth_camera_info_topic)
+
         self.ts = message_filters.ApproximateTimeSynchronizer(
-            [self.image_sub, self.camera_info_sub, self.depth_sub],
+            [self.image_sub, self.camera_info_sub, self.depth_sub, self.depth_camera_info_sub],
             queue_size=10,
             slop=0.1
         )
@@ -66,16 +82,24 @@ class YoloConeDetectionNode(Node):
 
         self.get_logger().info("YOLO Cone Detection Node with synchronized topics started...")
 
-    def synced_callback(self, image_msg: Image, camera_info_msg: CameraInfo, depth_msg: Image):
+    def extrinsics_callback(self, msg: Extrinsics):
+        self.extrinsics_R = np.array(msg.rotation).reshape(3, 3)
+        self.extrinsics_t = np.array(msg.translation)
+        self.get_logger().debug(f"Received extrinsics: R={self.extrinsics_R}, t={self.extrinsics_t}")
+
+    def synced_callback(self, image_msg: Image, camera_info_msg: CameraInfo, depth_msg: Image, depth_camera_info_msg: CameraInfo):
         """
-        Callback for synchronized image, camera info, and depth messages.
+        Callback for synchronized image, camera info, depth and depth info message.
         
         :param image_msg: The color image message.
-        :param camera_info_msg: The CameraInfo message containing intrinsics.
+        :param camera_info_msg: The CameraInfo message containing color intrinsics.
         :param depth_msg: The depth image message.
+        :depth_camera_info_msg: The CameraInfomessage containing depth intrinsics
         :return: None
         """
-        camera_frame = image_msg.header.frame_id
+        if self.extrinsics_R is None or self.extrinsics_t is None:
+            self.get_logger().warn("Extrinsics not received yet. Skipping callback.")
+            return
         
         # Convert depth image
         try:
@@ -91,28 +115,20 @@ class YoloConeDetectionNode(Node):
             self.get_logger().warn(f"Failed to convert color image: {e}")
             return
 
-        # Run YOLO inference on the color image
+        # Run YOLO inference on the color image.
         results = self.model(cv_image)
         detections = self.parse_yolo_results(results)
 
         # Prepare DetectedConeArray message
         cone_array_msg = DetectedConeArray()
-        cone_array_msg.header = image_msg.header
+        cone_array_msg.header = depth_msg.header
         cone_array_msg.header.frame_id = self.frame_id
         
-        # Determine scaling factors if image sizes differ
-        rgb_h, rgb_w = cv_image.shape[:2]
-        depth_h, depth_w = depth_image.shape[:2]
-        scale_depth_image = (rgb_w != depth_w) or (rgb_h != depth_h)
-        if scale_depth_image:
-            scale_x = depth_w / float(rgb_w)
-            scale_y = depth_h / float(rgb_h)
-
         try:
-            stamp_time = rclpy.time.Time.from_msg(image_msg.header.stamp)
+            stamp_time = rclpy.time.Time.from_msg(depth_msg.header.stamp)
             transform_stamped = self.tf_buffer.lookup_transform(
                 self.frame_id,
-                camera_frame,
+                depth_camera_info_msg.header.frame_id,
                 stamp_time,
                 timeout=Duration(seconds=0.5)
             )
@@ -120,34 +136,49 @@ class YoloConeDetectionNode(Node):
             self.get_logger().warn(f"Could not look up TF: {e}")
             return
 
+        # Create intrinsics objects for color and depth using the CameraInfo messages.
+        color_intrin = self.create_intrinsics(camera_info_msg)
+        depth_intrin = self.create_intrinsics(depth_camera_info_msg)
+
+        # Create extrinsics objects
+        depth_to_color = self.create_extrinsics(self.extrinsics_R, self.extrinsics_t)
+        color_to_depth = self.create_inverse_extrinsics(self.extrinsics_R, self.extrinsics_t)
+
         # For each yolo detection
         for det in detections:
             x_min, y_min, x_max, y_max = det["bbox"]
+            # Use the center of the bounding box as the color pixel.
+            u_color = int((x_min + x_max) / 2)
+            v_color = int((y_min + y_max) / 2)
+            from_pixel = [u_color, v_color]
 
-            # Determine pixel coordinates (u, v), u and v are centered in the bounding box
-            if scale_depth_image:
-                x_min_scaled = x_min * scale_x
-                x_max_scaled = x_max * scale_x
-                y_min_scaled = y_min * scale_y
-                y_max_scaled = y_max * scale_y
-                u = int((x_min_scaled + x_max_scaled) / 2)
-                v = int((y_min_scaled + y_max_scaled) / 2)
-            else:
-                u = int((x_min + x_max) / 2)
-                v = int((y_min + y_max) / 2)
+            # Project the color pixel to depth using the ported function.
+            to_pixel = self.ported_rs2_project_color_pixel_to_depth_pixel(
+                depth_msg,
+                self.depth_scale,
+                self.depth_min,
+                self.depth_max,
+                depth_intrin,
+                color_intrin,
+                color_to_depth,
+                depth_to_color,
+                from_pixel
+            )
+            u_depth, v_depth = int(round(to_pixel[0])), int(round(to_pixel[1]))
 
-            # Convert pixel coordinates to 3D point in camera frame
-            pt_camera = self.pixel_to_3d(u, v, depth_image, camera_info_msg)
-            if pt_camera is None:
+            if u_depth < 0 or v_depth < 0 or u_depth >= depth_intrin.width or v_depth >= depth_intrin.height:
+                self.get_logger().warn("Mapped depth pixel out of bounds.")
                 continue
 
-            ps_x, ps_y, ps_z = pt_camera
-            self.get_logger().debug(f"Detected 3D in {camera_frame}: x={ps_x}, y={ps_y}, z={ps_z}")
-            
-            # Create a PointStamped for the detected cone in the camera frame
+            pt_depth = self.pixel_to_3d(u_depth, v_depth, depth_image, depth_camera_info_msg)
+            if pt_depth is None:
+                continue
+            ps_x, ps_y, ps_z = pt_depth
+            self.get_logger().debug(f"Detected 3D in depth frame: x={ps_x}, y={ps_y}, z={ps_z}")
+
             ps = PointStamped()
-            ps.header.frame_id = camera_frame
-            ps.header.stamp = image_msg.header.stamp
+            ps.header.frame_id = depth_camera_info_msg.header.frame_id
+            ps.header.stamp = depth_msg.header.stamp
             ps.point.x = float(ps_x)
             ps.point.y = float(ps_y)
             ps.point.z = float(ps_z)
@@ -160,7 +191,7 @@ class YoloConeDetectionNode(Node):
                 continue
 
             cone_msg = DetectedCone()
-            cone_msg.header = image_msg.header
+            cone_msg.header = depth_msg.header
             cone_msg.header.frame_id = self.frame_id
             cone_msg.type = string_to_label.get(det["class_name"], UNKNOWN_CONE)
             cone_msg.position.x = ps_transformed.point.x
@@ -213,10 +244,6 @@ class YoloConeDetectionNode(Node):
         :param camera_info: The CameraInfo message containing camera intrinsics.
         :return: A tuple (X, Y, Z) representing the 3D point in the camera frame, or None if the conversion fails.
         """
-        #Check if pixel is valid
-        if u < 0 or v < 0 or u >= camera_info.width or v >= camera_info.height:
-            return None
-
         # Get camera intrinsics from CameraInfo message
         fx = camera_info.k[0]
         fy = camera_info.k[4]
@@ -242,7 +269,7 @@ class YoloConeDetectionNode(Node):
         if not depths:
             return None
 
-        depth = np.median(depths)
+        depth = np.median(depths) * self.depth_scale
         X = (u - cx) * depth / fx
         Y = (v - cy) * depth / fy
         Z = depth
@@ -252,6 +279,116 @@ class YoloConeDetectionNode(Node):
 
         return (X, Y, Z)
 
+    def create_intrinsics(self, cam_info):
+        intrin = rs.intrinsics()
+        intrin.width = cam_info.width
+        intrin.height = cam_info.height
+        intrin.fx = cam_info.k[0]
+        intrin.fy = cam_info.k[4]
+        intrin.ppx = cam_info.k[2]
+        intrin.ppy = cam_info.k[5]
+        intrin.model = rs.distortion.none
+        intrin.coeffs = [0, 0, 0, 0, 0]
+        return intrin
+
+    def create_extrinsics(self, R, t):
+        ext = rs.extrinsics()
+        ext.rotation = R.flatten().tolist()
+        ext.translation = t.tolist()
+        return ext
+
+    def create_inverse_extrinsics(self, R, t):
+        R_inv = R.T
+        t_inv = -R_inv.dot(t)
+        ext = rs.extrinsics()
+        ext.rotation = R_inv.flatten().tolist()
+        ext.translation = t_inv.tolist()
+        return ext
+    
+    #Many thanks & credits to joernnilsson for these functions https://github.com/IntelRealSense/realsense-ros/issues/1785#issuecomment-1568730486
+    def ported_adjust_2D_point_to_boundary(self, p, width, height):
+        if (p[0] < 0):
+            p[0] = 0
+        if (p[0] > width):
+            p[0] = float(width)
+        if (p[1] < 0):
+            p[1] = 0
+        if (p[1] > height):
+            p[1] = float(height)
+        return p
+
+    def ported_next_pixel_in_line(self, curr, start, end_p):
+        line_slope = (end_p[1] - start[1]) / (end_p[0] - start[0])
+        if (abs(end_p[0] - curr[0]) > abs(end_p[1] - curr[1])):
+            curr[0] = curr[0] + 1 if end_p[0] > curr[0] else curr[0] - 1
+            curr[1] = end_p[1] - line_slope * (end_p[0] - curr[0])
+        else:
+            curr[1] = curr[1] + 1 if end_p[1] > curr[1] else curr[1] - 1
+            curr[0] = end_p[0] - ((end_p[1] + curr[1]) / line_slope)
+    
+    def ported_is_pixel_in_line(self, curr, start, end_p):
+        return ((end_p[0] >= start[0] and end_p[0] >= curr[0] and curr[0] >= start[0]) or (end_p[0] <= start[0] and end_p[0] <= curr[0] and curr[0] <= start[0])) and \
+            ((end_p[1] >= start[1] and end_p[1] >= curr[1] and curr[1] >= start[1]) or (end_p[1] <= start[1] and end_p[1] <= curr[1] and curr[1] <= start[1]))
+
+    def ported_rs2_project_color_pixel_to_depth_pixel(self,
+                                                        data,
+                                                        depth_scale,
+                                                        depth_min,
+                                                        depth_max,
+                                                        depth_intrin,
+                                                        color_intrin,
+                                                        color_to_depth,
+                                                        depth_to_color,
+                                                        from_pixel
+                                                    ):
+        
+        # Return value
+        to_pixel = [0, 0]
+
+        # Find line start pixel
+        min_point = rs.rs2_deproject_pixel_to_point(color_intrin, from_pixel, depth_min)
+        min_transformed_point = rs.rs2_transform_point_to_point(color_to_depth, min_point)
+        start_pixel = rs.rs2_project_point_to_pixel(depth_intrin, min_transformed_point)
+
+        # Find line end depth pixel
+        max_point = rs.rs2_deproject_pixel_to_point(color_intrin, from_pixel, depth_max)
+        max_transformed_point = rs.rs2_transform_point_to_point(color_to_depth, max_point)
+        end_pixel = rs.rs2_project_point_to_pixel(depth_intrin, max_transformed_point)
+        end_pixel = self.ported_adjust_2D_point_to_boundary(end_pixel, depth_intrin.width, depth_intrin.height)
+
+        # search along line for the depth pixel that it's projected pixel is the closest to the input pixel
+        min_dist = -1.0
+        
+        p = [start_pixel[0], start_pixel[1]]
+        while self.ported_is_pixel_in_line(p, start_pixel, end_pixel):
+        
+            # This part assumes data is a ROS sensor_msgs/msg/Image
+            x = int(p[0])
+            y = int(p[1])
+            step = data.step
+            idx = y*step + x*2
+            byte_values = data.data[idx:idx+2]
+            int_value = int.from_bytes(byte_values, "big" if data.is_bigendian else "little")
+
+            depth = depth_scale * int_value
+            if (depth == 0):
+                self.ported_next_pixel_in_line(p, start_pixel, end_pixel)
+                continue
+
+            point = rs.rs2_deproject_pixel_to_point(depth_intrin, p, depth)
+            transformed_point = rs.rs2_transform_point_to_point(depth_to_color, point)
+            projected_pixel = rs.rs2_project_point_to_pixel(color_intrin, transformed_point)
+
+            new_dist = (float)(math.pow((projected_pixel[1] - from_pixel[1]), 2) + math.pow((projected_pixel[0] - from_pixel[0]), 2))
+            if new_dist < min_dist or min_dist < 0:
+
+                min_dist = new_dist
+                to_pixel[0] = p[0]
+                to_pixel[1] = p[1]
+  
+            self.ported_next_pixel_in_line(p, start_pixel, end_pixel)
+
+        return to_pixel
 
 def main(args=None):
     rclpy.init(args=args)

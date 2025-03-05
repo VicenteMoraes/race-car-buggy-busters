@@ -23,7 +23,7 @@ class ConeMarkerNode(Node):
 
         self.declare_parameter('detected_cones_topic', '/yolo_cones')
         self.declare_parameter('marker_topic', '/cone_markers')
-        self.declare_parameter('target_frame', 'map')
+        self.declare_parameter('target_frame', 'base_link')
 
         self.detected_cones_topic = self.get_parameter('detected_cones_topic').value
         self.marker_topic = self.get_parameter('marker_topic').value
