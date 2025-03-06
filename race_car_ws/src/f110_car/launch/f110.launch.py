@@ -21,56 +21,56 @@ def generate_launch_description():
             namespace="f110",
             executable="move_to_point",
             name="move_to_point",
-            parameters=[{"use_stim_time": use_sim_time, "max_speed": exploration_speed}]
+            parameters=[{"use_sim_time": True, "max_speed": exploration_speed}]
         )
     exploration_node = Node(
             package="f110_car",
             namespace="f110",
             executable="exploration_node",
             name="exploration_node",
-            parameters=[{'use_sim_time': use_sim_time}],
+            parameters=[{'use_sim_time': True}],
             )
     global_planning_node = Node(
             package="f110_car",
             namespace="f110",
             executable="global_planning_node",
             name="global_planning_node",
-            parameters=[{'use_sim_time': use_sim_time, "planning_speed": planning_speed}],
+            parameters=[{'use_sim_time': True, "planning_speed": planning_speed}],
         )
     exploration_vis_node = Node(
             package="f110_car",
             namespace="f110",
             executable="exploration_vis_node",
             name="exploration_vis_node",
-            parameters=[{'use_sim_time': use_sim_time}],
+            parameters=[{'use_sim_time': True}],
             )
     yolo_node = Node(
             package="test_package",
             namespace="f110",
             executable="yolo_node",
             name="yolo_node",
-            parameters=[{'use_sim_time': use_sim_time}],
+            parameters=[{'use_sim_time': True}],
             )
     semantic_mapping_node = Node(
             package="test_package",
             namespace="f110",
             executable="semantic_mapping_node",
             name="semantic_mapping_node",
-            parameters=[{'use_sim_time': use_sim_time}],
+            parameters=[{'use_sim_time': True}],
             )
     cone_marker_node = Node(
             package="test_package",
             namespace="f110",
             executable="cone_marker_node",
             name="cone_marker_node",
-            parameters=[{'use_sim_time': use_sim_time}],
+            parameters=[{'use_sim_time': True}],
             )
     semantic_grid_visualizer_node = Node(
             package="test_package",
             namespace="f110",
             executable="semantic_grid_visualizer_node",
             name="semantic_grid_visualizer_node",
-            parameters=[{'use_sim_time': use_sim_time}],
+            parameters=[{'use_sim_time': True}],
             )
     
     transform_node = Node(
@@ -78,7 +78,7 @@ def generate_launch_description():
         namespace="gazebo",
         executable="transform_pose",
         name="transform_pose",
-        parameters=[{"use_stim_time": use_sim_time}]
+        parameters=[{"use_stim_time": True}]
 
     )
     slam_launch = IncludeLaunchDescription(
@@ -95,7 +95,7 @@ def generate_launch_description():
             namespace="rviz2",
             executable="rviz2",
             name="rviz2",
-            parameters=[{"use_sim_time": use_sim_time}],
+            parameters=[{"use_sim_time": True}],
             arguments=["-d", PathJoinSubstitution([f110_car_pkg_share, "rviz_config.rviz"])],
             condition=IfCondition(start_rviz)
             )
@@ -110,7 +110,7 @@ def generate_launch_description():
                         '0', '0', '0', '0.0', '0.0', '0.0',
                         'laser', 'camera_link'
                         ],
-                    parameters=[{'use_sim_time': use_sim_time}],
+                    parameters=[{'use_sim_time': True}],
                     ),
                 Node(
                     package='tf2_ros',
@@ -121,7 +121,7 @@ def generate_launch_description():
                         '0', '0', '0', '0.0', '0.0', '0.0',
                         'base_link', 'laser'
                        ],
-                    parameters=[{'use_sim_time': use_sim_time}],
+                    parameters=[{'use_sim_time': True}],
                     ),
                 ])
     return LaunchDescription([
