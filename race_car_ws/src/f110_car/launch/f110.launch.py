@@ -11,17 +11,17 @@ from launch.conditions import IfCondition
 def generate_launch_description():
     f110_car_pkg_share = get_package_share_directory('f110_car')
     slam_toolbox_config = PathJoinSubstitution([f110_car_pkg_share, "mapper_params_online_async.yaml"])
-
     use_sim_time = LaunchConfiguration("use_sim_time", default=False)
     start_rviz = LaunchConfiguration("start_rviz", default=False)
+    exploration_speed = LaunchConfiguration("exploration_speed", default=0.25)
+    planning_speed = LaunchConfiguration("planning_speed", default=1.0)
    
     m2p_node = Node(
             package="f110_car",
             namespace="f110",
             executable="move_to_point",
             name="move_to_point",
-            parameters=[{"use_stim_time": use_sim_time}]
-
+            parameters=[{"use_stim_time": use_sim_time, "max_speed": exploration_speed}]
         )
     exploration_node = Node(
             package="f110_car",
@@ -30,6 +30,14 @@ def generate_launch_description():
             name="exploration_node",
             parameters=[{'use_sim_time': use_sim_time}],
             )
+        )
+    global_planning_node = Node(
+            package="f110_car",
+            namespace="f110",
+            executable="global_planning_node",
+            name="global_planning_node",
+            parameters=[{'use_sim_time': use_sim_time, "planning_speed": planning_speed}],
+        )
     exploration_vis_node = Node(
             package="f110_car",
             namespace="f110",
@@ -78,7 +86,7 @@ def generate_launch_description():
             PythonLaunchDescriptionSource(PathJoinSubstitution([get_package_share_directory("slam_toolbox"),
                                                                 "launch", "online_async_launch.py"])),
             launch_arguments={
-                "use_sim_time": 'true',
+                "use_sim_time": 'use_sim_time',
                 "slam_params_file": slam_toolbox_config,
                 }.items()
 
@@ -118,15 +126,14 @@ def generate_launch_description():
                     ),
                 ])
     return LaunchDescription([
-        m2p_node,
-        transforms,
+        #m2p_node,
         exploration_node,
         exploration_vis_node,
+        global_planning_node,
         yolo_node,
         cone_marker_node,
         semantic_mapping_node,
         semantic_grid_visualizer_node,
-        #transform_node,
         slam_launch,
         rviz
     ])
