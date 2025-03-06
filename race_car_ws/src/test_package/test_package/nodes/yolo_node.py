@@ -67,7 +67,7 @@ class YoloConeDetectionNode(Node):
         #self.extrinsics_sub = self.create_subscription(Extrinsics, extrinsics_topic, self.extrinsics_callback, 10)
         self.extrinsics_R = None  # 3x3 rotation matrix
         self.extrinsics_t = None  # 3-element translation vector
-        rotation = np.array([0.999, -0.0122, 0.000324, 0.01223, 0.999, 0.00525, 0.000388, -0.00524, 0 .999])
+        rotation = np.array([0.999, -0.0122, 0.000324, 0.01223, 0.999, 0.00525, 0.000388, -0.00524, 0.999])
         translation = np.array([0.01499, -0.000196, 0.000446])
         self.extrinsics_R = np.array(rotation).reshape(3, 3)
         self.extrinsics_t = np.array(translation)
