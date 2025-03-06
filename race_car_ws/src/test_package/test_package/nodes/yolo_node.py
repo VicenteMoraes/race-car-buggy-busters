@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import math
+from time import time
 import numpy as np
 import rclpy
 from rclpy.node import Node
@@ -84,6 +85,7 @@ class YoloConeDetectionNode(Node):
         )
         self.ts.registerCallback(self.synced_callback)
 
+        self.last_evaluated = time()
         self.get_logger().info("YOLO Cone Detection Node with synchronized topics started...")
 
     def extrinsics_callback(self, msg: Extrinsics):
@@ -101,6 +103,9 @@ class YoloConeDetectionNode(Node):
         :depth_camera_info_msg: The CameraInfomessage containing depth intrinsics
         :return: None
         """
+        if time() - self.last_evaluated < 0.1:
+            return
+        self.last_evaluated = time()
         if self.extrinsics_R is None or self.extrinsics_t is None:
             self.get_logger().warn("Extrinsics not received yet. Skipping callback.")
             return
