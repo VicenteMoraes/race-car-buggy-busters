@@ -28,7 +28,8 @@ class SemanticMappingNode(Node):
         self.declare_parameter('max_cone_length_m', 0.3) #Maximum length for an object to be detected in our filtered map
         self.declare_parameter('min_cone_area_m2', 0.001) #Minimum area for an object to be detected in our filtered map
         self.declare_parameter('cluster_merge_threshold', 0.1) # maximum distance (in meters) for a cone to “label” a nearby cluster, also used to identify identical clusters if they drift
-        
+        self.declare_parameter('cone_decay_time', 5.0)  # Time in Seconds for a cone to be removed from the storage
+
         # Retrieve parameters
         self.map_topic = self.get_parameter('map_topic').value
         self.cones_topic = self.get_parameter('cones_topic').value
@@ -37,6 +38,7 @@ class SemanticMappingNode(Node):
         self.cluster_merge_threshold = self.get_parameter('cluster_merge_threshold').value
         self.max_cone_length_m = self.get_parameter('max_cone_length_m').value
         self.min_cone_area_m2 = self.get_parameter('min_cone_area_m2').value
+        self.cone_decay_time = self.get_parameter('cone_decay_time').value
         
         self.map_sub = self.create_subscription(OccupancyGrid, self.map_topic, self.map_callback, 1)
         self.cones_sub = self.create_subscription(DetectedConeArray, self.cones_topic, self.cones_callback, 1)
@@ -46,7 +48,7 @@ class SemanticMappingNode(Node):
         
         # Variables to store the current map and known cone detections
         self.current_map = None
-        self.new_cones = []  # List of tuples: (world_x, world_y, label)
+        self.new_cones = []  # List of tuples: (world_x, world_y, label, creation_time)
         
         # Persistent cluster data:
         #   key: cluster_id (int)
@@ -69,15 +71,15 @@ class SemanticMappingNode(Node):
         :param msg: The occupancy grid message from SLAM Toolbox.
         :return: None
         """
+        self.cleanup_cones()
+
         self.current_map = msg
         
-        filtered_map = self.filter_large_objects(msg)
+        filtered_map = msg
         self.filtered_map_pub.publish(filtered_map)
         
         semantic_msg = self.build_semantic_grid(filtered_map)
         self.semantic_pub.publish(semantic_msg)
-        
-        self.new_cones.clear()
 
     def cones_callback(self, msg):
         """
@@ -91,12 +93,23 @@ class SemanticMappingNode(Node):
             return
         map_frame = self.current_map.header.frame_id
         
+        current_time = self.get_clock().now()
         for cone in msg.cones:
             trans_point = self.transform_point_to_frame(cone.position, cone.header, map_frame)
             if trans_point is None:
                 continue
             # Store the cone’s world coordinates (instead of grid coordinates)
-            self.new_cones.append((trans_point.point.x, trans_point.point.y, cone.type))
+            self.new_cones.append((trans_point.point.x, trans_point.point.y, cone.type, current_time))
+
+    def cleanup_cones(self):
+        """
+        Removes cones that have decayed (older than cone_decay_time).
+        """
+        current_time = self.get_clock().now()
+        self.new_cones = [
+            cone for cone in self.new_cones
+            if (current_time - cone[3]).nanoseconds * 1e-9 <= self.cone_decay_time
+        ]
 
     def build_semantic_grid(self, filtered_map):
         """
@@ -154,10 +167,13 @@ class SemanticMappingNode(Node):
                                 index=range(1, num_connected_regions + 1))
         
         # Convert cone detections into a NumPy array for vectorized distance checks.
-        cones_np = np.array(self.new_cones) # shape (N, 3) because columns are world_x, world_y, cone_label
+        cones_np = np.array([(c[0], c[1], c[2]) for c in self.new_cones]) # shape (N, 3), columns are world_x, world_y, cone_label
 
         # Build a mapping from temporary region numbers to persistent cluster IDs
         region2cluster = {}
+        
+        # Keep track of used cones, so they can be removed later.
+        used_cones_indices = set()
 
         #Go through each region, match to stored clusters and update hits/cone detections
         for region_num, centroid in enumerate(centroids, start=1):
@@ -191,6 +207,7 @@ class SemanticMappingNode(Node):
                 for idx in hits:
                     cone_label = int(cones_np[idx, 2])
                     self.clusters_dict[cluster_id]["label_counts"][cone_label] += 1
+                    used_cones_indices.add(idx)
 
         # Now assign labels to each region in the semantic grid.
         for region_num in range(1, num_connected_regions + 1):
@@ -209,6 +226,9 @@ class SemanticMappingNode(Node):
             for flat_idx in flat_indices:
                 semantic_cells[flat_idx].label = best_label
 
+        # Remove used cones
+        self.new_cones = [cone for i, cone in enumerate(self.new_cones) if i not in used_cones_indices]
+        
         semantic_grid.cells = semantic_cells
         
         return semantic_grid
