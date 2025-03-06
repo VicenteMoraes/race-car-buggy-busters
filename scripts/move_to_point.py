@@ -12,10 +12,6 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import PoseStamped
 
-WORLD = "car_world"
-CAR_ID = 4 # important to set the car position
-cone_model = Path(os.environ.get("IGN_GAZEBO_RESOURCE_PATH", "")) / "cone.sdf"
-assert cone_model.exists(), "Cone model does not exist"
 
 class TargetPointPublisher(Node):
     def __init__(self, x: float | int, y: float | int):
