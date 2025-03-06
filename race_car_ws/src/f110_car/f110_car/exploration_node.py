@@ -33,7 +33,7 @@ class ExplorationNode(Node):
         self.declare_parameter("semantic_grid_topic", "/semantic_map")
         self.declare_parameter("target_point_topic", "/target_point")
         self.declare_parameter("drive_topic", "/drive")
-        self.declare_parameter("projection_point_distance", 2)
+        self.declare_parameter("projection_point_distance", 1)
         self.declare_parameter("active", True)
 
         self.map_pose_subscriber = self.create_subscription(PoseWithCovarianceStamped, self.get_parameter("map_pose_topic").value,
