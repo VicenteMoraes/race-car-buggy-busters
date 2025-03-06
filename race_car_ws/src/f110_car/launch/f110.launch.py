@@ -30,7 +30,6 @@ def generate_launch_description():
             name="exploration_node",
             parameters=[{'use_sim_time': use_sim_time}],
             )
-        )
     global_planning_node = Node(
             package="f110_car",
             namespace="f110",
