@@ -126,6 +126,7 @@ def generate_launch_description():
                     ),
                 ])
     return LaunchDescription([
+        transforms,
         #m2p_node,
         exploration_node,
         exploration_vis_node,
