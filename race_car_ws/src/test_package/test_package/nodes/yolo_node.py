@@ -31,7 +31,7 @@ class YoloConeDetectionNode(Node):
         self.declare_parameter('camera_info_topic', '/camera/realsense2_camera/color/camera_info')
         self.declare_parameter('depth_topic', '/camera/realsense2_camera/depth/image_rect_raw')
         self.declare_parameter('detection_topic', '/yolo_cones')
-        self.declare_parameter('model_path', '/home/kevin/avai/race-car-buggy-busters/race_car_ws/src/test_package/runs/detect/train/weights/best.pt') 
+        self.declare_parameter('model_path', '/home/buggy-busters/race-car-buggy-busters/race_car_ws/src/test_package/runs/detect/train/weights/best.pt') 
         self.declare_parameter('confidence_threshold', 0.25) # Confidence threshold for filtering yolo detections
         self.declare_parameter('frame_id', 'base_link') # The target frame to which cone positions will be transformed.
         self.declare_parameter('patch_size', 5) # The amount of pixels to average over for depth detection of the cone
@@ -63,9 +63,13 @@ class YoloConeDetectionNode(Node):
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
-        self.extrinsics_sub = self.create_subscription(Extrinsics, extrinsics_topic, self.extrinsics_callback, 10)
+        #self.extrinsics_sub = self.create_subscription(Extrinsics, extrinsics_topic, self.extrinsics_callback, 10)
         self.extrinsics_R = None  # 3x3 rotation matrix
         self.extrinsics_t = None  # 3-element translation vector
+        rotation = np.array([0.999, -0.0122, 0.000324, 0.01223, 0.999, 0.00525, 0.000388, -0.00524, 0 .999])
+        translation = np.array([0.01499, -0.000196, 0.000446])
+        self.extrinsics_R = np.array(rotation).reshape(3, 3)
+        self.extrinsics_t = np.array(translation)
 
         # Setup synchronized subscriptions for color image, camera info, depth image, and depth camera info.
         self.image_sub = message_filters.Subscriber(self, Image, image_topic)
