@@ -1,4 +1,5 @@
-The whole implementation could be found in the GitHub repository. In this section we will show the purposes of each node implementation and how they are related to achieve the desired functionalities.
+\textbf{TODO: Incorporate elements of the presentation into the text.} The whole implementation can be found in the GitHub 
+\textbf{TODO: Link to repository!} repository. In this section we will show the purposes of each node implementation and how they are related to achieve the desired functionalities.
 In order to allow control on the platform car we have implemented a \textbf{WASDControl} node that allows manual control of an autonomous vehicle using the WASD keys to send Ackermann steering commands. It listens for keyboard input, translates it into driving commands, and publishes them to the \texttt{/drive} topic.
 The \textbf{InitDrive} is responsible for publishing an initial driving command to the \texttt{/drive} topic when it starts. It sends an AckermannDriveStamped message with a predefined speed and no steering angle, while the \textbf{M2P (Move to Point)} node is responsible for navigating the vehicle towards a given target point by processing odometry updates. It listens for target points, calculates the necessary steering and speed, and then sends commands to the \texttt{/drive} topic.\\
 \newline
