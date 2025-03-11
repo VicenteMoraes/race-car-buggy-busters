@@ -22,16 +22,115 @@ Figure \ref{fig:move-to-point} visualizes the calculation of the steering angle 
 
 After iterating over the \textit{MoveToPoint} node we did notice that the coordinate system of ROS2 was in reality more different than expected which we solved using a custom transform at that time. Due to large drifts in the odometry data of the vehicle in the real world we looked into the next building block for our software stack which was SLAM. SLAM would solve the drifting odometry and provide us with the tools necessary to build a map of the environment that we could enhance with additional information from other sensor systems to create a global plan for driving. Implementing SLAM proved infeasible however since during our experiments we noticed that the transforms from the ROS2 transform tree applied to the sensor data used by the SLAM Toolbox yielded very bad results. The sensor data and map information was drifting a lot. The result was an unusable map and no information about even the immediate proximity of the vehicle. Because of this we tried to create a map without using readily available tools like the SLAM Toolbox which also turned out to be infeasible since the noise of the environment requires robust odometry (roboust meaning it drifts in acceptable margins) and elaborate algorithms that could track objects in the environment over multiple frames of sensor data.
 
-\textbf{SEMANTIC MAPPING}
+Fortunately, after an update of the hardware stack, the transform problems experienced in the context of the SLAM Toolbox were resolved. With stable transforms, we successfully generated accurate maps using LIDAR data processed by the SLAM Toolbox, providing a reliable baseline map for our autonomous navigation tasks.
+To further enhance our mapping and navigation capabilities, we integrated semantic information related to cones through a dedicated node, the \textbf{YoloConeDetectionNode}. This node utilizes a YOLO deep-learning model specifically trained on a provided dataset of cone images. The YOLO model facilitates accurate 3D detection of cones while also assigning semantic labels (e.g., the cone colors).
+It performs the following key tasks:
+
+\begin{enumerate}
+    \item \textbf{2D Cone Detection}: It processes raw RGB images obtained from the Intel RealSense color camera, detecting cones and generating bounding boxes with associated semantic labels indicating the cone type (e.g., the color-based classification).
+
+    \item \textbf{Depth-Based Localization}: To translate these 2D detections into accurate 3D positions relative to the robot, we perform an additional depth-based localization step using the depth information from the RealSense depth sensor, as well as the provided intrinsics and extrinsics from the depth to the color camera. Due to possible misalignments between RGB and depth sensors, direct pixel-to-pixel mapping between color and depth images is not straightforward. Thus, we use an approach analogous to the one used in the Intel RealSense SDK:
+    
+    \begin{itemize}
+        \item \textit{Pixel Correspondence}: For each detected cone, the algorithm identifies the center pixel of its YOLO bounding box in the RGB image. This RGB pixel is then projected onto a corresponding pixel in the depth image through the following procedure:
+        
+        \begin{enumerate}[label=(\alph*)]
+            \item \textbf{Projection to a 3D Line}: The algorithm first takes the RGB pixel coordinates and projects them into two hypothetical 3D points, one at the minimum depth ($depth_{min}$) and one at the maximum depth ($depth_{max}$) limits.
+            
+            \item \textbf{Image Transformation}: These two 3D points, originally defined in the color image, are transformed into the depth image using pre-calibrated extrinsic parameters.
+            
+            \item \textbf{Back-Projection to the Depth Image Plane}: The transformed points define a line segment in the depth image plane, representing possible correspondences of the original RGB pixel.
+            
+            \item \textbf{Optimal Pixel Selection}: The algorithm searches along this line segment in the depth image to find a pixel that, when re-projected into the RGB image, minimizes the distance (error) to the original RGB detection pixel. This step ensures robust and accurate alignment, effectively resolving intrinsic or extrinsic misalignment between sensors.
+        \end{enumerate}
+        
+        \item \textit{Depth Value Extraction and Averaging}: After selecting the optimal depth pixel, the node computes a median depth value from a small pixel patch around it. This averaging further reduces the influence of noise and outliers.
+        
+    \end{itemize}
+
+    \item \textbf{Transformation using ROS2 TF}: The resulting 3D coordinates are then transformed into the robot's coordinate frame (\texttt{base\_link}) using ROS2's TF2 transformations.
+\end{enumerate}
+
+The detected cones will be visualized in RViz via the \textbf{ConeMarkerNode}, which listens to a DetectedConeArray, transforms the cone positions into a target frame, and publishes visual markers to RViz.\\
+\newline
+
+The resulting 3D coordinates and their label information are then further used in a \textbf{SemanticMappingNode}, fusing the LIDAR-based map from the SLAM Toolbox with the detected labeled cones to create an occupancy map with semantic information for later use in our planning. The semantic mapping process works as follows:
+
+\begin{enumerate}
+    \item \textbf{SLAM Occupancy Grid Processing}:  
+    The node subscribes to occupancy grid maps published by the SLAM Toolbox. Upon receiving a new map, it first filters out noise and irrelevant objects based on predefined model assumptions (e.g., maximum object length and minimum object area). This is achieved by identifying connected clusters of occupied grid cells and removing clusters that do not meet these criteria.
+
+    \item \textbf{Cone Detections Integration}:  
+    Detected cones from the YOLO-based cone detection node are received. Each cone’s position is transformed from its sensor frame into the global map coordinate frame using ROS2's TF2 transformations, ensuring alignment with the SLAM map and is then stored with a detection timestamp.
+
+    \item \textbf{Semantic Labeling via Cluster Matching}:  
+    The filtered occupancy grid is processed to identify connected clusters of occupied cells. Each cluster represents a potential object or obstacle. The algorithm calculates centroids for these clusters, stores them if they are new or matches them against a previously stored cluster, and then compares each centroid’s position against the transformed cones detections. If a cone detection is found within a predefined merge threshold distance, the cluster receives a "hit" corresponding to the cone's semantic label (e.g., cone color).
+
+    Clusters store persistent semantic information by counting the number of hits per label. When assigning semantic labels, each cluster takes on the semantic label with the most hits, providing robust and stable labeling despite potential detection noise or sensor inaccuracies.
+
+    \item \textbf{Semantic Grid Generation}:  
+    Finally, a \texttt{SemanticGrid} message is created, containing occupancy information and semantic labels for each cell. Cells in each identified cluster inherit the cluster's dominant semantic label. This semantic map can be directly utilized by downstream exploration and planning modules.
+
+    \item \textbf{Maintenance and Decay}:  
+    Cone detections are timestamped and periodically purged based on a decay threshold or if they were already used in the labeling of a cluster. This ensures that outdated or already matched detections do not permanently influence the map’s semantics.
+
+\end{enumerate}
+
+The computational complexity of the semantic mapping process is primarily determined by the following operations:
+
+\begin{itemize}
+
+    \item \textbf{Finding Clusters (Connected-Component Labeling)}:  
+    The occupancy grid data (size $n = \text{height} \times \text{width}$) is processed to find connected components using SciPy's \texttt{label} function, which operates in linear time.
+    \begin{itemize}
+        \item \textbf{Minimum-case:} $\mathcal{O}(n)$
+        \item \textbf{Average-case:} $\mathcal{O}(n)$
+        \item \textbf{Worst-case:} $\mathcal{O}(n)$
+    \end{itemize}
+
+    \item \textbf{Matching Clusters to Stored Clusters}:  
+    Each detected cluster (total $k$ clusters) is matched against existing stored clusters (total $s$ clusters) based on centroid distances.
+    \begin{itemize}
+        \item \textbf{Minimum-case:} $\mathcal{O}(k)$ (if no stored clusters exist, i.e., $s=0$)
+        \item \textbf{Average-case:} $\mathcal{O}(k \times s)$
+        \item \textbf{Worst-case:} $\mathcal{O}(k \times s)$, which becomes $\mathcal{O}(k^2)$ if $s \approx k$
+    \end{itemize}
+
+    \item \textbf{Matching Cones to Clusters}:  
+    For each of the $k$ clusters, distances to each of the $m$ cones are computed to assign cone labels to clusters.
+    \begin{itemize}
+        \item \textbf{Minimum-case:} $\mathcal{O}(k)$ (if $m = 0$)
+        \item \textbf{Average-case:} $\mathcal{O}(k \times m)$
+        \item \textbf{Worst-case:} $\mathcal{O}(k \times m)$
+    \end{itemize}
+
+    \item \textbf{Labeling Clusters}:  
+    For each of the $k$ clusters, all grid cells ($n$ total cells) are scanned to determine the cluster cells and assign labels, resulting in complexity $\mathcal{O}(k \times n)$.
+    \begin{itemize}
+        \item \textbf{Minimum-case:} $\mathcal{O}(n)$ \quad(if there's a single cluster, i.e., $k=1$)
+        \item \textbf{Average-case:} $\mathcal{O}(n)$ \quad(if $k$ is small relative to $n$)
+        \item \textbf{Worst-case:} $\mathcal{O}(k \times n)$, becoming $\mathcal{O}(n^2)$ in the case where $k \approx n$
+    \end{itemize}
+
+\end{itemize}
+
+Combining the above results, the overall computational complexity is summarized as follows:
+
+\begin{itemize}
+    \item \textbf{Minimum-case (best-case):} $\mathcal{O}(n + k + k + n) = \mathcal{O}(n + k)\approx \mathcal{O}(n)$
+
+    \item \textbf{Average-case:} $\mathcal{O}(n + k \times s + k \times m + n) \approx \mathcal{O}(n + k \times (s + m))$
+
+    \item \textbf{Worst-case}: $\mathcal{O}(n + k \times s + k \times m + k \times n) \approx \mathcal{O}(k \times (n + s + m))$
+    
+    If we further assume the worst conditions, such as $k \approx n$ and $s, m \approx n$, this becomes:
+    $\mathcal{O}(n^2)$
+\end{itemize}
+
+The \textbf{SemanticGridVisualizerNode} is responsible for visualizing cone clusters detected in a semantic grid using RViz. It processes the semantic occupancy grid, clusters detected cones based on their labels, computes the centroid of each cluster, and publishes visual markers to be displayed in RViz at the location of the centroids.\\
 
 In order to allow control on the platform car we have implemented a \textbf{WASDControl} node that allows manual control of an autonomous vehicle using the WASD keys to send Ackermann steering commands. It listens for keyboard input, translates it into driving commands, and publishes them to the \texttt{/drive} topic.
 The \textbf{InitDrive} is responsible for publishing an initial driving command to the \texttt{/drive} topic when it starts. It sends an AckermannDriveStamped message with a predefined speed and no steering angle, while the \textbf{M2P (Move to Point)} node is responsible for navigating the vehicle towards a given target point by processing odometry updates. It listens for target points, calculates the necessary steering and speed, and then sends commands to the \texttt{/drive} topic.\\
-\newline
-For the cone detection, we have implemented a \textbf{YoloConeDetectionNode} that detects cones in a camera image using a YOLO (You Only Look Once) deep learning model. It processes synchronized RGB images, camera info, and depth images, estimates the 3D positions of detected cones, and publishes the results as DetectedConeArray messages to the \texttt{/yolo\_cones} topic.
-The detected cones will be visualized in RViz due to \textbf{ConeMarkerNode} that listens to a DetectedConeArray, transforms the cone positions into a target frame, and publishes visual markers to RViz.\\
-\newline
-In order to create an occupancy map a \textbf{SemanticGridVisualizerNode} was created that build a semantic map by integrating detected cones into a SLAM-generated occupancy grid. It processes both SLAM maps and detected cones, filters large objects and assigns semantic labels to obstacles.
-The \textbf{SemanticGridVisualizerNode} is responsible for visualizing cone clusters detected in a semantic grid using RViz. It processes the semantic occupancy grid, clusters detected cones based on their labels, computes the centroid of each cluster, and publishes visual markers to be displayed in RViz.\\
 \newline
 Having a map allows us to begin exploring by creating an \textbf{ExplorationNode} that generates target points for an autonomous vehicle by analysing cone positions from the semantic grid. It computes a new driving target point based on the vehicle's position and orientation from the \texttt{/pose} topic, detected cones from the semantic grid, finding the closest blue cone (left) and yellow cone (right) and computing their midpoint as the next driving target. It also monitors steering angle and allows activating/deactivating exploration.
 These target points are visualized by the \textbf{ExplorationVisualizerNode} that listens to target point messages and publishes a marker to make the points visible in RViz.\\
