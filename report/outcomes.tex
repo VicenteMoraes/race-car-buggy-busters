@@ -13,6 +13,13 @@ Fulfilled requirements:
 	\item F16: parameters like min, max speed, max acceleration, etc. implemented as ROS2 parameters, max speed is set to lower value (1 m/s???)
 	\item F20, F21, F22, F23
 	\item F31
+	\item Q11
+	\item Q16
+	\item Q19: data filtering by cluster filtering in sensor fusion
+	\item C01, C02
+	\item C07
+	\item C08: vehicle was tested on track, albeit not successfully
+	\item C09, C10, C11
 \end{itemize}
 
 Changed requirements:
@@ -25,6 +32,12 @@ Changed requirements:
 	\item F28: position over time is tracked for path planning
 	\item F32: killing nodes suffices for current implementation stage
 	\item F34: tested in simulation, real world was problematic due to aforementioned challenges
+	\item Q02: changed frequency to 5Hz in real world, still (more or less) okay, due to lower speed
+	\item Q05: detection happens within sensor fusion range
+	\item Q08: classification does not happen at certain range, range varies in simulation and in real world
+	\item Q18: does not happen autonomously, but it's generally possible
+	\item C03: lower processing frequency since lower speed and also cost intensive computations
+	\item C04: emergency stop by killing nodes
 \end{itemize}
 
 Non-fulfilled requirements:
@@ -36,4 +49,15 @@ Non-fulfilled requirements:
 	\item F24: not explicitly implemented since we're driving at low speeds
 	\item F27: not possible with current stack and current connection speeds (but there are logs for the nodes)
 	\item F29, F30, F33: see F27 reasoning -> but also no autonomous node restart after failure
+	\item Q01: latency cannot be tracked in current state
+	\item Q03: localization accuracy can't be validated currently
+	\item Q06: no emergency braking implemented
+	\item Q09, Q10: no control system or fallback implemented
+	\item Q12: no hardware health tracking currently possible (low connection speed)
+	\item Q13: no telemetry possible -> see Q12
+	\item Q14: no parametrization for algorithms happened
+	\item Q17: implementation wasn't at the point of requiring energy usage optimization
+	\item Q20: no trajectory updates since trajectory is only planned once and not adjusted later
+	\item C05, C06: no system health monitoring currently possible
+	\item C12: no identification of critical scenarios was implemented yet
 \end{itemize}
