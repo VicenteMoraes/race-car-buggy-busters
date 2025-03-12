@@ -3,16 +3,17 @@ The vehicle is positioned in the driving direction at the start. The race enviro
 The track is a closed-loop circuit without any branches, and its layout changes between races. The vehicle operates without other cars on the track, with a maximum speed of approximately 15 km/h. 
 A perception round precedes the timed lap. The system utilizes ROS2 Humble for software integration and runs on an NVIDIA Jetson NX 16GB. The vehicle is equipped with a 3D + mono depth camera (Intel RealSense Depth Camera D435i) and a high-resolution 2D LiDAR (Hokuyo UST-10), and features a four-wheel-drive system with Ackermann steering for navigation. \\
 \newline
-\textbf{TODO: Add our assumptions/expectations towards the project.}\\
+For this goal to be fulfilled, we assumed following elements to be given:
 \newline
 \begin{itemize}
-	\item Working hard- \& software stack
-	\item Reliable WiFi connection to the car
-	\item Guidance \& support for debugging \& working with ROS2 Humble
+	\item \textbf{Working hard- \& software stack}: In order to work effectively on this project, we assume that the given hard- and software stack is working as intended. 
+	\item \textbf{Reliable WiFi connection to the car}: We need a reliable wireless connection to the car platform if we want to test it in the real world and also for the race. We assume that an SSH connection to the car with good data transfer speeds and little to none disconnections is possible.
+	\item \textbf{Guidance \& support for debugging \& working with ROS2 Humble}: As we are no professionals regarding working with ROS2 and as debugging with ROS2 can be a complex task, we assume that we receive some more professional help with working with and especially debugging in ROS2.
 \end{itemize}
-Below are our functional and quality requirements listed for this project:
-\textbf{TODO: Turn item list into table and add Must/Should/Could Have as additional column}
+
 \subsection{Functional Requirements}
+
+The functional requirements describe what tasks the car should fulfil for driving autonomously. In the following table the main driving tasks (Perception, Localization, Mapping, Planning, and Control) are broken down into requirements fit to our project goals. Additionally, we introduced requirements for vehicle health and monitoring.
 
 \begin{center}
 	\begin{longtable}{ | m{2em} | m{10em} | m{16em} | m{8em} | }
@@ -105,6 +106,8 @@ Below are our functional and quality requirements listed for this project:
 
 \subsection{Quality Requirements}
 
+The quality requirements ensure that the car is working within its constraints as intended. Furthermore some quality requirements are requirements towards the hardware and some numerical values may differ in the end depending on average and maximum speeds achieved by the racecar in the final implementation.
+
 \begin{center}
 	\begin{longtable}{ | m{2em} | m{10em} | m{16em} | m{8em} | }
 		\caption{Quality Requirements.} \label{tab:long}\\
@@ -167,6 +170,8 @@ Below are our functional and quality requirements listed for this project:
 
 
 \subsection{Constraints}
+
+The constraints are defined by the limitations of the hardware and the rules of the Formula Student Driverless. They limit our solution space in order to yield a feasible solution in the end.
 
 \begin{center}
 	\begin{longtable}{ | m{2em} | m{10em} | m{16em} | m{8em} | }
