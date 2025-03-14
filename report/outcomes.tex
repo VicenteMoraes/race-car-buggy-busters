@@ -1,62 +1,61 @@
 \textbf{TODO: Which requirements were fulfilled? Reference (link) to elements of the expectations section! TODO: Link to youtube videos and give brief explanation.}
 
-Following for implementation and after facing the challenges, we have a race car that can drive autonomously in simulation. In the real world setting, we are still facing issues with the perception, since the car still cannot reliably classify cones by the color. This makes it impossible for the car to successfully maneuver in turns as soon as there are cones of one color (blue or yellow) missing for the calculation of the next target point. \\
-During development our understanding of the stack and our solution space has changed, which also yields a change in requirements. \\
+Following for implementation and after facing the challenges, we have a race car that can drive autonomously in simulation. In the real world setting, we are still facing issues with the perception, since the car still cannot reliably classify cones by the color. This makes it impossible for the car to successfully maneuver in turns as soon as there are cones of one color (blue or yellow) missing for the calculation of the next target point. \\ \newline
+Based on the dependencies between requirements and an initial prioritization  only a subset of the requirements was fulfilled. These requirements include F01 - F04, F06, F09 - F11, F14 - F16, F20 - F23, F28, F31, F34. Q11, Q16, Q19, C01, C02, and C07 - C11. Still, there are some requirements that were realized in a way that we did not initially plan for it. These include F14, where the vehicle stops driving since it is uncertain of the next target point because of missing cone classifications. Yet, in our current implementation, we do not check whether the car is still on the track or not. For Q19 we filter the data during our sensor fusion and cluster detection, rejecting clusters, that do not fit the dimensions of a cone. Finally, while the vehicle was tested on track as described in C08 and F34, those tests were not successful. \\
+\newline
+During development our understanding of the stack and our solution space has changed, which also yields a change in requirements. The following table displays the subset of the changed requirements which in this form can be considered as done. \\
 
-Fulfilled requirements:
-\begin{itemize}
-	\item F01, F02, F03, F04
-	\item F06, F07
-	\item F09, F10, F11
-	\item F14: inherently kinda done (stops, when it is not certain of next target point on track, but not when it comes of track)
-	\item F15: two driving modes: exploration and race (no emergency stop)
-	\item F16: parameters like min, max speed, max acceleration, etc. implemented as ROS2 parameters, max speed is set to lower value (1 m/s???)
-	\item F20, F21, F22, F23
-	\item F31
-	\item Q11
-	\item Q16
-	\item Q19: data filtering by cluster filtering in sensor fusion
-	\item C01, C02
-	\item C07
-	\item C08: vehicle was tested on track, albeit not successfully
-	\item C09, C10, C11
-\end{itemize}
+\begin{center}
+	\begin{longtable}{ | m{2em} | m{10em} | m{16em} | m{8em} | }
+		\caption{Changed Requirements.} \label{tab:long}\\
+		
+		\hline \multicolumn{1}{|m{2em}|}{\textbf{ID}} & \multicolumn{1}{m{10em}|}{\textbf{Requirement Name}} & \multicolumn{1}{m{16em}|}{\textbf{Requirement}} & \multicolumn{1}{m{8em}|}{\textbf{Classification}} \\ \hline
+		\endfirsthead
+		
+		\multicolumn{4}{m{36em}}%
+		{{\bfseries \tablename\ \thetable{} -- continued from previous page}} \\
+		\hline \multicolumn{1}{|m{2em}|}{\textbf{ID}} & \multicolumn{1}{m{10em}|}{\textbf{Requirement Name}} & \multicolumn{1}{m{16em}|}{\textbf{Requirement}} & \multicolumn{1}{m{8em}|}{\textbf{Classification}} \\ \hline
+		\endhead
+		
+		\hline \multicolumn{4}{|m{36em}|}{Continued on next page} \\ \hline
+		\endfoot
+		
+		\hline \hline
+		\endlastfoot
+		
+		F08* & Self-Localization & The vehicle shall localize itself relative to a map using fused data from LiDAR, camera, and odometry. & Must have \\ \hline
+		F12* & Path Planning & The vehicle shall employ a path planning algorithm that plans a static path after an exploration lap. & Must have \\ \hline
+		Q02* & Control Loop Frequency & The vehicle shall maintain a control loop update frequency of ca. 5 HZ to ensure smooth and responsive at ca. 1 km/h. & Must have \\ \hline
+		Q04* & Perception Radius & The perception system shall detect cones within the range of the sensor overlap (LiDAR and camera) to provide sufficient time for target point calculations. & Must have \\ \hline
+		C03* & Real-Time Performance & The system shall process sensor inputs at ca. 5 Hz to maintain real-time performance within the computational limits of the vehicle. & Must have \\ \hline
+		C04* & Remote Emergency Stop & The vehicle shall include a Remote Emergency Stop that can be triggered by the race team at any time. & Must have
+	\end{longtable}
+\end{center}
 
-Changed requirements:
-\begin{itemize}
-	\item F08: self-localization on map instead of relative to track boundaries
-	\item F12: path planning runs only once after exploration round, does not adapt later since track layout does not change during race
-	\item F17: for our speeds it is not quite necessary, acceleration is adjusted by distance to next target point (within speed limits)
-	\item F25: no external signals, except stopping/killing launch file/node
-	\item F26: nodes can crash independently, when planning/perception is not working the callbacks are not triggered and at some point no new target point can be created
-	\item F28: position over time is tracked for path planning
-	\item F32: killing nodes suffices for current implementation stage
-	\item F34: tested in simulation, real world was problematic due to aforementioned challenges
-	\item Q02: changed frequency to 5Hz in real world, still (more or less) okay, due to lower speed
-	\item Q05: detection happens within sensor fusion range
-	\item Q08: classification does not happen at certain range, range varies in simulation and in real world
-	\item Q18: does not happen autonomously, but it's generally possible
-	\item C03: lower processing frequency since lower speed and also cost intensive computations
-	\item C04: emergency stop by killing nodes
-\end{itemize}
-
+Lastly, there are still requirements left, that were not (fully) fulfilled since they were outside our time scope, became obsolete due to our approach, or are currently technically unfulfillable. 
 Non-fulfilled requirements:
 \begin{itemize}
 	\item F05: changed approach to ensure that car stays within boundaries
+	\item F17: for our speeds it is not quite necessary, acceleration is adjusted by distance to next target point (within speed limits)
 	\item F13: not fulfilled since track layout doesn't change during race and path planning only happens after track is fully explored
 	\item F18: not yet implemented, not needed at low speeds (at least in simulation?)
 	\item F19: smooth acceleration not really possible with the acceleration mode of car at low speeds (acceleration is per default jerky at low speeds)
 	\item F24: not explicitly implemented since we're driving at low speeds
+	\item F25: no external signals, except stopping/killing launch file/node
+	\item F26: nodes can crash independently, when planning/perception is not working the callbacks are not triggered and at some point no new target point can be created
 	\item F27: not possible with current stack and current connection speeds (but there are logs for the nodes)
 	\item F29, F30, F33: see F27 reasoning -> but also no autonomous node restart after failure
+	\item F32: killing nodes suffices for current implementation stage
 	\item Q01: latency cannot be tracked in current state
 	\item Q03: localization accuracy can't be validated currently
 	\item Q06: no emergency braking implemented
+	\item Q08: classification does not happen at certain range, range varies in simulation and in real world
 	\item Q09, Q10: no control system or fallback implemented
 	\item Q12: no hardware health tracking currently possible (low connection speed)
 	\item Q13: no telemetry possible -> see Q12
 	\item Q14: no parametrization for algorithms happened
 	\item Q17: implementation wasn't at the point of requiring energy usage optimization
+	\item Q18: does not happen autonomously, but it's generally possible
 	\item Q20: no trajectory updates since trajectory is only planned once and not adjusted later
 	\item C05, C06: no system health monitoring currently possible
 	\item C12: no identification of critical scenarios was implemented yet
