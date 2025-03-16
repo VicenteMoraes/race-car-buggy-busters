@@ -121,9 +121,6 @@ Combining the above results, the overall computational complexity is summarized 
     \item \textbf{Average-case:} $\mathcal{O}(n + k \times s + k \times m + n) \approx \mathcal{O}(n + k \times (s + m))$
 
     \item \textbf{Worst-case}: $\mathcal{O}(n + k \times s + k \times m + k \times n) \approx \mathcal{O}(k \times (n + s + m))$
-    
-    If we further assume the worst conditions, such as $k \approx n$ and $s, m \approx n$, this becomes:
-    $\mathcal{O}(n^2)$
 \end{itemize}
 
 The \textbf{SemanticGridVisualizerNode} is responsible for visualizing cone clusters detected in a semantic grid using RViz. It processes the semantic occupancy grid, clusters detected cones based on their labels, computes the centroid of each cluster, and publishes visual markers to be displayed in RViz at the location of the centroids.\\
