@@ -53,11 +53,11 @@ def generate_launch_description():
             name="global_planning_node",
             parameters=[{'use_sim_time': use_sim_time, "planning_speed": planning_speed}],
         )
-    yolo_node = Node(
+    yolo_node_rgbd = Node(
             package="test_package",
             namespace="f110",
-            executable="yolo_node",
-            name="yolo_node",
+            executable="yolo_node_rgbd",
+            name="yolo_node_rgbd",
             parameters=[{'use_sim_time': use_sim_time}],
             )
     semantic_mapping_node = Node(
@@ -233,7 +233,7 @@ def generate_launch_description():
         exploration_vis_node,
         #global_planning_node,
         #wasd_node,
-        yolo_node,
+        yolo_node_rgbd,
         cone_marker_node,
         semantic_mapping_node,
         semantic_grid_visualizer_node,
