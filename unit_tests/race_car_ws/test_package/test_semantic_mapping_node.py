@@ -8,6 +8,8 @@ from geometry_msgs.msg import PointStamped, Point, Pose, Quaternion, TransformSt
 from std_msgs.msg import Header
 from unittest.mock import MagicMock
 import tf2_geometry_msgs
+from rclpy.time import Time
+from rclpy.clock import ClockType
 
 from race_car_ws.src.test_package.test_package.nodes.semantic_mapping_node import SemanticMappingNode, UNKNOWN_CONE
 
@@ -110,7 +112,7 @@ def test_cones_callback(semantic_node):
     semantic_node.cones_callback(dca)
 
     expected = (1.0, 1.0, 3)  # Expect coordinates in the map frame
-    assert semantic_node.new_cones[0] == expected
+    assert semantic_node.new_cones[0][:3] == expected
 
 def test_filter_large_objects(semantic_node):
     """Test filtering of large objects."""
@@ -180,7 +182,8 @@ def test_map_callback(semantic_node):
     data[6] = 100
     fake_map = create_fake_occupancy_grid(width, height, resolution, data, frame_id="map")
     semantic_node.current_map = fake_map  # Set current_map
-    semantic_node.new_cones = [(1.0, 1.0, 3)]
+    fake_time = Time(seconds=10, nanoseconds=0, clock_type=ClockType.ROS_TIME)
+    semantic_node.new_cones = [(1.0, 1.0, 3, fake_time)]
 
     semantic_node.map_callback(fake_map)
 

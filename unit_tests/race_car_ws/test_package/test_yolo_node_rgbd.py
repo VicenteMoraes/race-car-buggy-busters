@@ -3,7 +3,7 @@ import math
 import numpy as np
 from sensor_msgs.msg import CameraInfo
 from unittest.mock import MagicMock
-from race_car_ws.src.test_package.test_package.nodes.yolo_node import YoloConeDetectionNode
+from race_car_ws.src.test_package.test_package.nodes.yolo_node_rgbd import YoloConeDetectionNodeRGBD
 
 class FakeBox:
     def __init__(self, cls, conf, xyxy):
@@ -35,7 +35,7 @@ def create_fake_camera_info(width=640, height=480):
 
 @pytest.fixture
 def yolo_node(ros_setup):
-    node = YoloConeDetectionNode()
+    node = YoloConeDetectionNodeRGBD()
     node.conf_threshold = 0.5
     node.frame_id = "base_link"
     node.model = FakeModel({0: "yellow_cones", 1: "blue_cones", 2: "orange_cones"})

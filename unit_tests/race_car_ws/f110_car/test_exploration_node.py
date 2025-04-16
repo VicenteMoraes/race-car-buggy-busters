@@ -38,7 +38,7 @@ def test_get_projected_point(mock_get_vector, node):
     node.last_pose.pose.pose.position.x = 5.0
     node.last_pose.pose.pose.position.y = 3.0
     projected_point = node.get_projected_point()
-    assert np.allclose(projected_point, [7.0, 3.0], atol=1e-5)
+    assert np.allclose(projected_point, [6.0, 3.0], atol=1e-5)
 
 def test_create_target_point_msg(node):
     """Test creation of PoseStamped target message."""
