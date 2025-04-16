@@ -15,76 +15,85 @@ def generate_launch_description():
     
     use_sim_time = LaunchConfiguration("use_sim_time", default=True)
     start_rviz = LaunchConfiguration("start_rviz", default=True)
+    exploration_speed = LaunchConfiguration("exploration_speed", default=0.25)
+    planning_speed = LaunchConfiguration("planning_speed", default=1.0)
     
     wasd_node = Node(
             package="test_package",
             namespace="f110",
             executable="wasd_control_node",
             name="wasd_control",
-            parameters=[{'use_sim_time': True}],
+            parameters=[{'use_sim_time': use_sim_time}],
             )
     move_to_point = Node(
             package="f110_car",
             namespace="f110",
             executable="move_to_point",
             name="move_to_point",
-            parameters=[{'use_sim_time': True}],
+            parameters=[{"use_stim_time": use_sim_time, "max_speed": exploration_speed}]
             )
     exploration_node = Node(
             package="f110_car",
             namespace="f110",
             executable="exploration_node",
             name="exploration_node",
-            parameters=[{'use_sim_time': True}],
+            parameters=[{'use_sim_time': use_sim_time}],
             )
     exploration_vis_node = Node(
             package="f110_car",
             namespace="f110",
             executable="exploration_vis_node",
             name="exploration_vis_node",
-            parameters=[{'use_sim_time': True}],
+            parameters=[{'use_sim_time': use_sim_time}],
             )
-    yolo_node = Node(
+    global_planning_node = Node(
+            package="f110_car",
+            namespace="f110",
+            executable="global_planning_node",
+            name="global_planning_node",
+            parameters=[{'use_sim_time': use_sim_time, "planning_speed": planning_speed}],
+        )
+    yolo_node_rgbd = Node(
             package="test_package",
             namespace="f110",
-            executable="yolo_node",
-            name="yolo_node",
-            parameters=[{'use_sim_time': True}],
+            executable="yolo_node_rgbd",
+            name="yolo_node_rgbd",
+            parameters=[{'use_sim_time': use_sim_time}],
             )
     semantic_mapping_node = Node(
             package="test_package",
             namespace="f110",
             executable="semantic_mapping_node",
             name="semantic_mapping_node",
-            parameters=[{'use_sim_time': True}],
+            parameters=[{'use_sim_time': use_sim_time}],
             )
     cone_marker_node = Node(
             package="test_package",
             namespace="f110",
             executable="cone_marker_node",
             name="cone_marker_node",
-            parameters=[{'use_sim_time': True}],
+            parameters=[{'use_sim_time': use_sim_time}],
             )
     semantic_grid_visualizer_node = Node(
             package="test_package",
             namespace="f110",
             executable="semantic_grid_visualizer_node",
             name="semantic_grid_visualizer_node",
-            parameters=[{'use_sim_time': True}],
+            parameters=[{'use_sim_time': use_sim_time}],
             )
     ackermann_to_twist_node = Node(
             package="gazebo_f110",
             namespace="gazebo",
             executable="ackermann_to_twist",
             name="ackermann_to_twist",
-            parameters=[{'use_sim_time': True}],
+            parameters=[{'use_sim_time': use_sim_time}],
             )
     transform_node = Node(
         package="gazebo_f110",
         namespace="gazebo",
         executable="transform_pose",
         name="transform_pose",
-        parameters=[{'use_sim_time': True}],
+        parameters=[{'use_sim_time': use_sim_time}],
     )
     rviz = Node(
             package="rviz2",
@@ -92,7 +101,7 @@ def generate_launch_description():
             executable="rviz2",
             name="rviz2",
             arguments=["-d", PathJoinSubstitution([pkg_gazebo_f110, "rviz_config.rviz"])],
-            parameters=[{'use_sim_time': True}],
+            parameters=[{'use_sim_time': use_sim_time}],
             condition=IfCondition(start_rviz)
             )
     slam_launch = IncludeLaunchDescription(
@@ -127,7 +136,7 @@ def generate_launch_description():
                 ("/model/base_link/tf", "/tf"),
                 ],
             output='screen',
-            parameters=[{'use_sim_time': True}],
+            parameters=[{'use_sim_time': use_sim_time}],
             )
 
     gazebo_launch_group = GroupAction(
@@ -163,7 +172,7 @@ def generate_launch_description():
                         '-1.57', '0', '-1.57',
                         'base_link', 'camera_link'
                     ],
-                    parameters=[{'use_sim_time': True}],
+                    parameters=[{'use_sim_time': use_sim_time}],
                 )]
     )
     transforms = GroupAction(
@@ -177,7 +186,7 @@ def generate_launch_description():
                         '0', '0', '0', '0.0', '0.0', '0.0',
                         'lidar_link', 'gpu_lidar'
                         ],
-                    parameters=[{'use_sim_time': True}],
+                    parameters=[{'use_sim_time': use_sim_time}],
                     ),
                 Node(
                     package='tf2_ros',
@@ -188,7 +197,7 @@ def generate_launch_description():
                         '0', '0', '0', '0.0', '0.0', '0.0',
                         'map', 'scan'
                        ],
-                    parameters=[{'use_sim_time': True}],
+                    parameters=[{'use_sim_time': use_sim_time}],
                     ),
                 Node(
                     package='tf2_ros',
@@ -199,7 +208,7 @@ def generate_launch_description():
                         '0', '0', '0', '0.0', '0.0', '0.0',
                         'map', 'odom'
                        ],
-                    parameters=[{'use_sim_time': True}],
+                    parameters=[{'use_sim_time': use_sim_time}],
                     ),
                 Node(
                     package='tf2_ros',
@@ -210,7 +219,7 @@ def generate_launch_description():
                         '0', '0', '0', '0.0', '0.0', '0.0',
                         'odom', 'base_link'
                        ],
-                    parameters=[{'use_sim_time': True}],
+                    parameters=[{'use_sim_time': use_sim_time}],
                     ),
                 ])
     robot_state_publisher = Node(package='robot_state_publisher', executable='robot_state_publisher',
@@ -222,8 +231,9 @@ def generate_launch_description():
         move_to_point,
         exploration_node,
         exploration_vis_node,
+        #global_planning_node,
         #wasd_node,
-        yolo_node,
+        yolo_node_rgbd,
         cone_marker_node,
         semantic_mapping_node,
         semantic_grid_visualizer_node,
