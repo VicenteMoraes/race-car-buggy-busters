@@ -20,10 +20,12 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   msg/DetectedConeArray.msg
   msg/SemanticCell.msg
   msg/SemanticGrid.msg
+	action/Server.action
   DEPENDENCIES
     std_msgs
     geometry_msgs
     nav_msgs
+		action_msgs
 )
 
 ament_export_dependencies(
@@ -31,6 +33,7 @@ ament_export_dependencies(
   std_msgs
   geometry_msgs
   nav_msgs
+	action_msgs
 )
 
 ament_package()
