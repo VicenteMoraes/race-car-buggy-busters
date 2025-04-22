@@ -4,6 +4,56 @@ This is the repository for the course "Autonomous Vehicles And Artificial Intell
 
 Take a look at the [Documentation](https://rub-avai.github.io/race-car-buggy-busters/)
 
+## IMPORTANT UPDATES
+
+In order to run the simulation please update your IGN GAZEBO RESOURCE PATH so it points to the race car models:
+
+```sh
+export IGN_GAZEBO_RESOURCE_PATH=/home/$USER/race-car-buggy-busters/race_car_ws/install/gazebo_f110/share/gazebo_f110/model
+```
+
+- Run simple driving server:
+
+```sh
+colcon build
+source install/setup.bash
+ros2 run simple_driving driving_node
+```
+Action Server: /simple_driving
+Control Driving Topic: /control_driving
+
+
+- Action Server Message:
+
+```
+# Request (First Message)
+string connect
+---
+# Result (Final Message)
+string disconnect
+---
+# Feedback
+string is_driving
+```
+
+- Send goal to action Server through the terminal:
+
+```sh
+ros2 action send_goal --feedback /simple_driving racecar_msgs/action/Server "{connect: 'start_action'}"
+```
+
+- Start navigation:
+
+```sh
+ros2 topic pub /control_driving std_msgs/msg/String "data: start" --once
+```
+
+- Stop navigation:
+
+```sh
+ros2 topic pub /control_driving std_msgs/msg/String "data: 'stop'" --once
+```
+
 ## Structure
 
 The respository contains:
