@@ -39,7 +39,7 @@ string is_driving
 - Send goal to action Server through the terminal:
 
 ```sh
-ros2 action send_goal --feedback /simple_driving racecar_msgs/action/Server "{connect: 'start_action'}"
+ros2 action send_goal --feedback /simple_driving racecar_msgs/action/Server "{connect: 'connect'}"
 ```
 
 - Start navigation:
