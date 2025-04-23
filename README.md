@@ -9,7 +9,7 @@ Take a look at the [Documentation](https://rub-avai.github.io/race-car-buggy-bus
 In order to run the simulation please update your IGN GAZEBO RESOURCE PATH so it points to the race car models:
 
 ```sh
-export IGN_GAZEBO_RESOURCE_PATH=/home/$USER/race-car-buggy-busters/race_car_ws/install/gazebo_f110/share/gazebo_f110/model
+export IGN_GAZEBO_RESOURCE_PATH=/home/$USER/Projects/race-car-buggy-busters/race_car_ws/install/gazebo_f110/share/gazebo_f110/model
 ```
 
 - Run simple driving server:
