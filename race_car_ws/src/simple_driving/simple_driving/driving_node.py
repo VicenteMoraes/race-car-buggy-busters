@@ -36,7 +36,7 @@ class DrivingNode(Node):
             self.publisher.publish(msg)
 
     def action_callback(self, goal_handle):
-        if goal_handle.request.connect == "start_action":
+        if goal_handle.request.connect == "connect":
             self.connected = True
             feedback_msg = Server.Feedback()
             feedback_msg.is_driving = "Connection Established"
